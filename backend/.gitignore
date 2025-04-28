@@ -1,0 +1,11 @@
+# Node.js dependencies
+node_modules/
+
+
+# Package files
+package-lock.json
+
+# env
+.env
+
+Frontend/

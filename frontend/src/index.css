@@ -1,0 +1,95 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* Pop-in Animation */
+/* Pop-in Animation (unchanged, as it doesn't use colors directly) */
+@keyframes pop-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-pop-in {
+  animation: pop-in 0.4s ease-out forwards;
+}
+
+/* Slide-up Animation (unchanged, as it doesn't use colors directly) */
+@keyframes slide-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+/* Gradient Flow Animation with custom colors */
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-flow {
+  background-size: 200% 200%;
+  animation: gradient-flow 4s ease infinite;
+}
+
+/* Favorite Animation (unchanged) */
+@keyframes favorite {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.animate-favorite {
+  animation: favorite 0.4s ease;
+}
+
+
+
+/* RM Slide Animation (unchanged) */
+@keyframes rm-slide {
+  0% { transform: translateX(-20px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.animate-rm-slide {
+  animation: rm-slide 0.3s ease-out forwards;
+}
+
+/* Crack and Flower Animation (unchanged) */
+@keyframes crack-and-flower {
+  0% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.animate-crack-and-flower {
+  animation: crack-and-flower 0.5s ease-out forwards;
+}
+
+/* used below animation in my listings no brokerage */
+@keyframes bulbGlow {
+  0%, 100% {
+    filter: brightness(1);
+    
+    background-position: 0% 50%;
+  }
+  50% {
+    filter: brightness(1);
+   
+    background-position: 50% 100%;
+  }
+}
+
+.animate-bulb-glow {
+  animation: bulbGlow 2s infinite ease-in-out;
+  background-size: 200% 200%;
+}

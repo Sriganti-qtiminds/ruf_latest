@@ -1,0 +1,27 @@
+const Redis = require("ioredis");
+
+const redis = new Redis({
+  host: "rufrent-redis.a0bk1v.ng.0001.aps1.cache.amazonaws.com:6379",
+  port: 6379,
+  connectTimeout: 100000,
+});
+
+redis.on("connect", () => {
+  console.log("Connected to Redis on EC2!");
+});
+
+redis.on("error", (err) => {
+  console.error("Redis connection error:", err);
+});
+
+// Example: Set and Get a Value
+(async () => {
+  //await redis.set("message", "Hello from Local Machine");
+
+  //const value = await redis.get("filtered_data");
+  const value = await redis.set("filtered_data", "Hello from EC2");
+
+  //console.log("Redis Value:", value);
+  const keys = await redis.scan("0", "MATCH", "*", "COUNT", "1000");
+  console.log("Redis Keys:", keys[1]);
+})();
