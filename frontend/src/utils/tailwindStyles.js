@@ -23,7 +23,7 @@ const tailwindStyles = {
   heading_1: `text-[#001433] text-center text-md lg:text-2xl font-bold 2xl:text-3xl`,
   heading_2: `text-[#001433] text-center text-xl font-bold 2xl:text-lg`,
   heading_3: `text-[#001433] text-sm md:text-md font-semibold 2xl:text-lg`,
-  heading_card:`text-[#001433] text-sm md:text-md lg:text-lg font-semibold 2xl:text-lg`,
+  heading_card: `text-[#001433] text-sm md:text-md lg:text-lg font-semibold 2xl:text-lg`,
   heading_4: `text-[#001433] mb-1 text-xs 2xl:text-md font-semibold`,
   paragraph: "text-gray-600 text-[10px] lg:text-xs 2xl:text-md",
   paragraph_l: "text-gray-600 text-md lg:text-md 2xl:text-md font-semibold",

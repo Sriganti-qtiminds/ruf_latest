@@ -54,6 +54,7 @@ const AuthController = require("../controllers/signupLogin");
 // payment Initialization
 
 const PaymentController = require("../controllers/paymentController");
+const StudioController = require("../controllers/studio/studiocontroller");
 
 // Admin
 const adminController = new AdminController();
@@ -94,6 +95,9 @@ const authController = new AuthController();
 
 // payment
 const paymentController = new PaymentController();
+
+//Studio
+const studioController = new StudioController();
 
 // Admin Routes
 router.get("/st-tables", (req, res) =>
@@ -297,6 +301,40 @@ router.post("/create-order", (req, res) =>
 );
 router.post("/verify-payment", (req, res) =>
   paymentController.verifyPayment(req, res)
+);
+
+//testimonials
+
+router.post(
+  "/addNewTestimonialRecord",
+  upload.single("images"), // Change from .array() to .single()
+  (req, res) => userController.addNewTestimonialRecord(req, res)
+);
+
+router.get("/getNewTestimonialRecord", (req, res) =>
+  userController.getNewtestimonialRecord(req, res)
+);
+
+router.get("/getAllTestimonialRecords", (req, res) =>
+  userController.getAllTestimonialRecords(req, res)
+);
+router.delete("/deleteNewTestimonialRecord", (req, res) =>
+  userController.deleteTestimonialRecord(req, res)
+);
+router.put("/updateNewTestimonialRecord", (req, res) =>
+  userController.updateTestimonialRecord(req, res)
+);
+
+router.get("/getStudioRoomsInfo", (req, res) =>
+  studioController.getRoomsInfo(req, res)
+);
+
+router.post("/addStudioRoomsInfo", (req, res) =>
+  studioController.AddRoomInfo(req, res)
+);
+
+router.put("/updateStudioRoomsInfo", (req, res) =>
+  studioController.UpdateRoomInfo(req, res)
 );
 
 module.exports = router;

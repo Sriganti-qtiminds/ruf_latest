@@ -469,6 +469,8 @@ const EnquiryManagementDashboard = () => {
 
       {loading ? (
         <div>Loading...</div>
+      ) : enquiries.length == 0 ? (
+        <div className="text-red-500">No Enquiries Found</div>
       ) : error ? (
         <div className="text-red-500">Error: {error}</div>
       ) : (
@@ -499,42 +501,47 @@ const EnquiryManagementDashboard = () => {
                   </th>
                 </tr>
               </thead>
+
               <tbody className="bg-white divide-y divide-gray-200">
-                {enquiries.map((e) => (
-                  <tr key={e.enq_id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {e.enq_id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {e.category_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {e.enq_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {e.enq_mobile}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {e.enq_rec_create_time
-                        ? new Date(e.enq_rec_create_time).toLocaleString(
-                            "en-US",
-                            {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            }
-                          )
-                        : "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <button
-                        onClick={() => handleMoreInfoClick(e)}
-                        className={`${tailwindStyles.secondaryButton} mr-3`}
-                      >
-                        Add Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {enquiries.length > 0 ? (
+                  enquiries.map((e) => (
+                    <tr key={e.enq_id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {e.enq_id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {e.category_name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {e.enq_name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {e.enq_mobile}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {e.enq_rec_create_time
+                          ? new Date(e.enq_rec_create_time).toLocaleString(
+                              "en-US",
+                              {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              }
+                            )
+                          : "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button
+                          onClick={() => handleMoreInfoClick(e)}
+                          className={`${tailwindStyles.secondaryButton} mr-3`}
+                        >
+                          Add Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <div>No Enquiries Found</div>
+                )}
               </tbody>
             </table>
           </div>

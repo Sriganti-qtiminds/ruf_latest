@@ -10,6 +10,7 @@ import {
   Building2,
   Table2,
   ClipboardPlus,
+  Star
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -29,6 +30,11 @@ const Sidebar = () => {
       path: "requests",
       icon: <MessageSquare size={20} />,
       label: "Requests",
+    },
+    {
+      path: "testimonials",
+      icon: <Star size={20} />,
+      label: "Reviews",
     },
     {
       path: "assign-managers",

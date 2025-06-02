@@ -1,7 +1,4 @@
-
-
-// Latest authmodal login page first 
-
+//Latest authmodal login page first
 
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
@@ -45,9 +42,7 @@ const AuthModal = ({ isOpen, onClose, triggerBy = "/" }) => {
   const [isMobileConfirmed, setIsMobileConfirmed] = useState(false);
   const [isMobileValid, setIsMobileValid] = useState(false);
   const [isLogin, setIsLogin] = useState(true); // Default to login page
-  const [selectedCountry,
-
- setSelectedCountry] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState(null);
   const [countries, setCountries] = useState([]);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
@@ -246,7 +241,7 @@ const AuthModal = ({ isOpen, onClose, triggerBy = "/" }) => {
         Cookies.set(jwtSecretKey, data.token, { expires: 1 });
 
         if (triggerBy) {
-          navigate(`/user/${triggerBy}`);
+          navigate(`${triggerBy}`);
         }
         onClose();
       }
@@ -316,7 +311,7 @@ const AuthModal = ({ isOpen, onClose, triggerBy = "/" }) => {
         Cookies.set(jwtSecretKey, data.token, { expires: 1 });
 
         if (triggerBy) {
-          navigate(`/user/${triggerBy}`);
+          navigate(`${triggerBy}`);
         }
         onClose();
       }
@@ -345,7 +340,7 @@ const AuthModal = ({ isOpen, onClose, triggerBy = "/" }) => {
         await fetchUserTransactions(afterLoginData.id);
         Cookies.set(jwtSecretKey, afterLoginData.token, { expires: 1 });
         if (triggerBy) {
-          navigate(`/user/${triggerBy}`);
+          navigate(`${triggerBy}`);
         }
         onClose();
       }
@@ -490,7 +485,7 @@ const AuthModal = ({ isOpen, onClose, triggerBy = "/" }) => {
                   // className="flex items-center justify-center bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105"
                   onClick={handleContinue}
                 >
-                 Continue
+                  Continue
                 </button>
               )}
               {!afterLoginIsMobile && (
@@ -638,8 +633,7 @@ const AuthModal = ({ isOpen, onClose, triggerBy = "/" }) => {
 
 export default AuthModal;
 
-
-// CountryCodeDropdown.jsx
+// // CountryCodeDropdown.jsx
 
 export const CountryCodeDropdown = ({
   dropdownRef,

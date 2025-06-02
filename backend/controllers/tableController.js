@@ -2397,7 +2397,7 @@ class UserController extends BaseController {
     try {
       const result = await this.dbService.getRecordsByFields(
         "st_enquirer_category",
-        "id, category",
+        "id, usertype",
         1
       );
       return res.status(201).json({
@@ -2424,14 +2424,16 @@ class UserController extends BaseController {
     let flag = false;
     let message = "";
     let connection;
-    const { usercat, name, country_code, mobile_no, status } = req.body;
+    let { usercat, name, country_code, mobile_no, status } = req.body;
     // Validate input
     if (!usercat) {
       flag = false;
+      usercat=1;
       message = "Please Select Your Category";
     }
     if (!country_code) {
       flag = false;
+      country_code = "+91";
       message = "Please Select Your Country";
     }
     if (!name) {
@@ -2456,7 +2458,9 @@ class UserController extends BaseController {
       await TransactionController.beginTransaction(connection);
 
       const tableName = "dy_enqs";
-      let enq_status = 25;
+      
+      status=25;
+      
 
       // Step 2: Insert data into the database
       const fieldNames =
@@ -2521,7 +2525,7 @@ class UserController extends BaseController {
       enq_prop_facing,
       enq_rental_low,
       enq_rental_high,
-     
+
       enq_parking_count,
       enq_available,
       enq_super_area,
@@ -2550,7 +2554,7 @@ class UserController extends BaseController {
       enq_prop_facing,
       enq_rental_low,
       enq_rental_high,
-      
+
       enq_parking_count,
       enq_available,
       enq_super_area,
@@ -2856,6 +2860,346 @@ class UserController extends BaseController {
       if (connection) {
         await TransactionController.releaseConnection(connection);
       }
+    }
+  }
+  async addNewTestimonialRecord(req, res) {
+    let connection;
+
+    try {
+      const testimonialData = req.body;
+      const file = req.file;
+
+      // Log inputs
+      console.log("req.body:", testimonialData);
+      console.log("req.file:", file);
+
+      // Destructure fields from testimonialData
+      const {
+        user_id,
+        rating,
+        city_id,
+        builder_id,
+        community_id,
+        description,
+        display_name,
+        current_status,
+      } = testimonialData;
+
+      // Validate required fields
+      if (
+        !user_id ||
+        !display_name ||
+        !rating ||
+        !description ||
+        !current_status
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Please provide all required testimonial fields including display name.",
+        });
+      }
+
+      if (rating < 1 || rating > 5) {
+        return res.status(400).json({
+          success: false,
+          message: "Rating should be between 1 and 5",
+        });
+      }
+
+      if (display_name.length > 255) {
+        return res.status(400).json({
+          success: false,
+          message: "Display name should not exceed 255 characters",
+        });
+      }
+
+      // Step 1: Initialize imagePath
+      let imagePath = null;
+
+      // Upload image to S3 if file is provided
+      if (file) {
+        const testimonialUid = uuidv4(); // Optional: UUID for tracking
+        imagePath = await S3Service.uploadImage(
+          file,
+          user_id,
+          "testimonial_images"
+        );
+
+        if (!imagePath) {
+          throw new Error("Image upload failed.");
+        }
+      }
+
+      // Step 2: Get connection & start transaction
+      connection = await TransactionController.getConnection();
+      await TransactionController.beginTransaction(connection);
+
+      // Step 3: Prepare and insert testimonial data
+      const testimonialRecord = {
+        user_id,
+        rating,
+        city_id,
+        builder_id,
+        community_id,
+        image_data: imagePath,
+        description,
+        display_name,
+        current_status,
+      };
+
+      const [result] = await this.dbService.addNewRecord(
+        "dy_testimonial",
+        Object.keys(testimonialRecord).join(", "),
+        Object.values(testimonialRecord)
+          .map((val) => db.escape(val))
+          .join(", "),
+        connection
+      );
+
+      if (!result.insertId) {
+        throw new Error("Testimonial insert failed.");
+      }
+
+      // Step 4: Commit transaction
+      await TransactionController.commitTransaction(connection);
+
+      return res.status(201).json({
+        success: true,
+        message: "Testimonial added successfully.",
+        testimonialId: result.insertId,
+      });
+    } catch (error) {
+      console.error("Error adding testimonial:", error.message);
+
+      if (connection) {
+        await TransactionController.rollbackTransaction(connection);
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to add testimonial entry.",
+        error: error.message,
+      });
+    } finally {
+      if (connection) {
+        await TransactionController.releaseConnection(connection);
+      }
+    }
+  }
+
+  async getNewtestimonialRecord(req, res) {
+    const { id } = req.query;
+
+    try {
+      const tableName = `dy_testimonial dyt`;
+
+      const joinClauses = `
+      LEFT JOIN dy_user du ON dyt.user_id = du.id
+      LEFT JOIN st_city sc ON dyt.city_id = sc.id
+      LEFT JOIN st_builder sb ON dyt.builder_id = sb.id
+      LEFT JOIN st_community scom ON dyt.community_id = scom.id
+    `;
+
+      const fieldNames = `
+      dyt.id,
+      dyt.user_id,
+      dyt.rating,
+      dyt.image_data,
+      dyt.display_name,
+      dyt.description,
+      dyt.current_status,
+      dyt.testimonial_date,
+      du.user_name,
+      du.email_id,
+      du.mobile_no,
+      du.customer_id,
+      sc.id AS city_id,
+      sc.name AS city_name,
+      sb.id AS builder_id,
+      sb.name AS builder_name,
+      scom.id AS community_id,
+      scom.name AS community_name
+    `;
+
+      let whereCondition = `dyt.current_status = 3`;
+      if (id) {
+        whereCondition += ` AND dyt.id = ${db.escape(id)}`;
+      }
+
+      const results = await this.dbService.getJoinedData(
+        tableName,
+        joinClauses,
+        fieldNames,
+        whereCondition
+      );
+
+      if (!results || results.length === 0) {
+        return res.status(404).json({
+          error:
+            "No records found for the provided testimonial ID with status 3.",
+        });
+      }
+
+      res.status(200).json({
+        message: "Retrieved successfully.",
+        result: results,
+      });
+    } catch (error) {
+      console.error("Error fetching testimonial data:", error.message);
+      res.status(500).json({
+        error: "An error occurred while fetching testimonial data.",
+        details: error.message,
+      });
+    }
+  }
+
+  //admin testimonials
+  async getAllTestimonialRecords(req, res) {
+    const { id } = req.query;
+
+    try {
+      const tableName = `dy_testimonial dyt`;
+
+      const joinClauses = `
+      LEFT JOIN dy_user du ON dyt.user_id = du.id
+      LEFT JOIN st_city sc ON dyt.city_id = sc.id
+      LEFT JOIN st_builder sb ON dyt.builder_id = sb.id
+      LEFT JOIN st_community scom ON dyt.community_id = scom.id
+    `;
+
+      const fieldNames = `
+      dyt.id,
+      dyt.user_id,
+      dyt.rating,
+      dyt.image_data,
+      dyt.display_name,
+      dyt.description,
+      dyt.current_status,
+      dyt.testimonial_date,
+      du.user_name,
+      du.email_id,
+      du.mobile_no,
+      du.customer_id,
+      sc.id AS city_id,
+      sc.name AS city_name,
+      sb.id AS builder_id,
+      sb.name AS builder_name,
+      scom.id AS community_id,
+      scom.name AS community_name
+    `;
+
+      const whereCondition = id ? `dyt.id = ${db.escape(id)}` : "";
+
+      const results = await this.dbService.getJoinedData(
+        tableName,
+        joinClauses,
+        fieldNames,
+        whereCondition
+      );
+
+      if (!results || results.length === 0) {
+        return res
+          .status(404)
+          .json({ error: "No records found for the provided testimonial ID." });
+      }
+
+      res.status(200).json({
+        message: "Retrieved successfully.",
+        result: results,
+      });
+    } catch (error) {
+      console.error("Error fetching testimonial data:", error.message);
+      res.status(500).json({
+        error: "An error occurred while fetching testimonial data.",
+        details: error.message,
+      });
+    }
+  }
+
+  async deleteTestimonialRecord(req, res) {
+    const { id } = req.query;
+
+    if (!id) {
+      return res
+        .status(400)
+        .json({ error: "Testimonial ID is required for deletion." });
+    }
+
+    try {
+      const whereCondition = `id = ${db.escape(id)}`;
+
+      const result = await this.dbService.deleteRecord(
+        "dy_testimonial",
+        whereCondition
+      );
+
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ error: "No testimonial found with the provided ID." });
+      }
+
+      res.status(200).json({ message: "Testimonial deleted successfully." });
+    } catch (error) {
+      console.error("Error deleting testimonial:", error.message);
+      res.status(500).json({
+        error: "An error occurred while deleting the testimonial.",
+        details: error.message,
+      });
+    }
+  }
+  async updateTestimonialRecord(req, res) {
+    const {
+      id,
+      rating,
+      image_data,
+      description,
+      current_status,
+      testimonial_date,
+    } = req.body;
+
+    // Validate required ID
+    if (!id) {
+      return res
+        .status(400)
+        .json({ error: "Missing 'id' for update operation." });
+    }
+
+    // Only include fields that are provided (non-undefined)
+    const updateFields = {};
+    if (rating !== undefined) updateFields.rating = rating;
+    if (image_data !== undefined) updateFields.image_data = image_data;
+    if (description !== undefined) updateFields.description = description;
+    if (current_status !== undefined)
+      updateFields.current_status = current_status;
+    if (testimonial_date !== undefined)
+      updateFields.testimonial_date = testimonial_date;
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({ error: "No fields provided to update." });
+    }
+
+    try {
+      const tableName = "dy_testimonial";
+      const whereCondition = `id = ${db.escape(id)}`;
+
+      const result = await this.dbService.updateRecord(
+        tableName,
+        updateFields,
+        whereCondition
+      );
+
+      return res.status(200).json({
+        message: "Testimonial updated successfully.",
+        result,
+      });
+    } catch (error) {
+      console.error("Error updating testimonial:", error.message);
+      return res.status(500).json({
+        error: "An error occurred while updating the testimonial.",
+        details: error.message,
+      });
     }
   }
 }

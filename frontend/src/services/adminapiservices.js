@@ -9,7 +9,7 @@ import {
   fetchAllRmsFms,
   updateRecordInDB,
 } from "../config/adminConfig";
-
+const apiUrl = `${import.meta.env.VITE_API_URL}`;
 import { deleteRecord } from "../config/apiRoute";
 // Dashboard
 
@@ -98,4 +98,65 @@ export const fetchRmFms = async () => {
 
 export const updateRequest = async (recordId, updateRecords) => {
   updateRecordInDB(recordId, updateRecords);
+};
+
+
+//Reviews
+export const getAllTestimonials = async () => {
+  const url = `${apiUrl}/getAllTestimonialRecords`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'No testimonials found.');
+  }
+  return response.json().then(data => {
+    if (!data.result || data.result.length === 0) {
+      return [];
+    }
+    return data.result.map(item => ({
+      id: item.id,
+      user_name: item.user_name || 'Anonymous',
+      display_name: item.display_name || item.user_name || 'Anonymous',
+      rating: item.rating,
+      description: item.description,
+      image_data: item.image_data || null,
+      current_status: item.current_status,
+      testimonial_date: item.testimonial_date,
+      city_id: item.city_id || null,
+      city_name: item.city_name || null,
+      builder_id: item.builder_id || null,
+      builder_name: item.builder_name || null,
+      community_id: item.community_id || null,
+      community_name: item.community_name || null,
+    }));
+  });
+};
+
+
+export const updateTestimonial = async (id, updateData) => {
+  const response = await fetch(`${apiUrl}/updateNewTestimonialRecord`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id, ...updateData }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update testimonial');
+  }
+
+  return response.json();
+};
+
+export const deleteTestimonial = async (id) => {
+  const response = await fetch(`${apiUrl}/deleteNewTestimonialRecord?id=${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete testimonial');
+  }
+
+  return response.json();
 };

@@ -26,7 +26,7 @@ class addRmTask extends BaseController {
       const existingRecord = await this.dbService.getRecordsByFields(
         "dy_transactions",
         "*",
-        `user_id = ${db.escape(user_id)}`
+        `user_id = ${db.escape(user_id)} and prop_id= ${db.escape(property_id)}`
       );
   
       if (existingRecord.length > 0) {

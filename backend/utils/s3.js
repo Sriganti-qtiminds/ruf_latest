@@ -75,6 +75,32 @@ class S3Service {
       throw new Error("Failed to upload images: " + error.message);
     }
   }
+
+  async uploadImage(file, uid, folderType) {
+  const folderPath = `${folderType}/${uid}/`;
+  const filePath = `${folderPath}${file.originalname}`;
+
+  try {
+    const resizedImageBuffer = await sharp(file.buffer)
+      .resize(800, 600)
+      .toBuffer();
+
+    await this.s3.send(
+      new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: filePath,
+        Body: resizedImageBuffer,
+        ContentType: file.mimetype,
+      })
+    );
+
+    const imageUrl = `https://${this.bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${filePath}`;
+    return imageUrl;
+  } catch (error) {
+    throw new Error("Failed to upload image: " + error.message);
+  }
+}
+  
   async uploadCommunityImages(files, uid, folderType) {
     let folderPath = `${folderType}/${uid}/`;
     try {
@@ -107,7 +133,7 @@ class S3Service {
       let allPropertyImages = {};
       let isTruncated = true;
       let continuationToken = null;
-
+  
       while (isTruncated) {
         const propertyCommand = new ListObjectsV2Command({
           Bucket: process.env.AWSS3_BUCKET_NAME,
@@ -123,14 +149,14 @@ class S3Service {
         } = await this.s3.send(propertyCommand);
         isTruncated = IsTruncated;
         continuationToken = NextContinuationToken;
-
+  
         if (propertyContents && propertyContents.length > 0) {
           propertyContents.forEach((file) => {
             const match = file.Key.match(/properties\/([^/]+)\/images\/(.+)/);
             if (match) {
               const propertyUid = match[1];
               const imageUrl = `https://${process.env.AWSS3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.Key}`;
-
+  
               if (!allPropertyImages[propertyUid]) {
                 allPropertyImages[propertyUid] = [];
               }
@@ -139,7 +165,7 @@ class S3Service {
           });
         }
       }
-
+  
       // ✅ Cache property images in Redis
       if (Object.keys(allPropertyImages).length > 0) {
         await Promise.all(
@@ -149,7 +175,7 @@ class S3Service {
         );
         await redis.expire("all_property_images", 21600);
       }
-
+  
       return allPropertyImages;
     } catch (error) {
       console.error("Error fetching and caching property images:", error);
@@ -161,7 +187,7 @@ class S3Service {
       let allCommunityImages = {};
       let isTruncated = true;
       let continuationToken = null;
-
+  
       while (isTruncated) {
         const communityCommand = new ListObjectsV2Command({
           Bucket: process.env.AWSS3_BUCKET_NAME,
@@ -177,7 +203,7 @@ class S3Service {
         } = await this.s3.send(communityCommand);
         isTruncated = IsTruncated;
         continuationToken = NextContinuationToken;
-
+  
         if (communityContents && communityContents.length > 0) {
           communityContents.forEach((file) => {
             const match = file.Key.match(
@@ -186,7 +212,7 @@ class S3Service {
             if (match) {
               const communityId = match[1];
               const imageUrl = `https://${process.env.AWSS3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.Key}`;
-
+  
               if (!allCommunityImages[communityId]) {
                 allCommunityImages[communityId] = [];
               }
@@ -195,7 +221,7 @@ class S3Service {
           });
         }
       }
-
+  
       // ✅ Cache community images in Redis
       if (Object.keys(allCommunityImages).length > 0) {
         await Promise.all(
@@ -205,7 +231,7 @@ class S3Service {
         );
         await redis.expire("all_community_images", 21600);
       }
-
+  
       return allCommunityImages;
     } catch (error) {
       console.error("Error fetching and caching community images:", error);

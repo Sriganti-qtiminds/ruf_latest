@@ -48,6 +48,10 @@ import ChatBot from "./components/CommonViews/ChatBot";
 import FooterPage from "./UserView/components/InitialLandingView/FooterViews/FooterPage";
 
 import "./App.css";
+import Reviews from "./AdminView/components/Reviews";
+
+import StudioLandingView from "./StudioView/components/InitialLandingView";
+import StudioUserLayout from "./StudioView/layout/StudioUserLayout";
 
 const App = () => {
   const navigate = useNavigate();
@@ -71,7 +75,7 @@ const App = () => {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<InitialLandingPage />} />
-        {/* <Route path="user-landing" element={<UserLandingView />} /> */}
+
         <Route
           path="signup"
           element={<AuthModal isOpen={loginModel} onClose={onCloseModel} />}
@@ -92,6 +96,10 @@ const App = () => {
           <Route path="myservices" element={<ServicesView />} />
         </Route>
         {/* </Route> */}
+        <Route path="/studio" element={<StudioUserLayout />}>
+          <Route index element={<StudioLandingView />} />
+          <Route path="profile" element={<ProfileView />} />
+        </Route>
 
         <Route element={<ProtectedRoute roles={["RM", "Admin"]} />}>
           <Route index path="enquiries" element={<EnquiriesView />} />
@@ -102,7 +110,7 @@ const App = () => {
           <Route index path="RM" element={<RMView />} />
         </Route>
 
-        {/* RM Routes */}
+        {/* FM Routes */}
         <Route element={<ProtectedRoute roles={["FM"]} />}>
           <Route index path="FM" element={<FMView />} />
         </Route>
@@ -113,7 +121,7 @@ const App = () => {
             <Route index element={<Dashboard />} />
             <Route path="properties" element={<PropertyListings />} />
             <Route path="requests" element={<Requests />} />
-
+            <Route path="testimonials" element={<Reviews />} />
             <Route path="assign-managers" element={<StaffAssignment />} />
             <Route path="communities" element={<Communities />} />
             <Route path="user-management" element={<UserManagement />} />

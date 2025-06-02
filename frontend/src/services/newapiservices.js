@@ -148,3 +148,65 @@ export const deleteRMTask = async (trId) => {
     );
   }
 };
+
+
+// testimonial related
+
+export const addNewTestimonial = async (testimonialData, imageFile) => {
+  try {
+    console.log('Adding new testimonial:', testimonialData, imageFile);
+
+    // Create FormData object for multipart/form-data request
+    const formData = new FormData();
+    formData.append('user_id', testimonialData.user_id);
+    formData.append('display_name', testimonialData.display_name);
+    formData.append('rating', testimonialData.rating);
+    formData.append('description', testimonialData.description);
+    formData.append('current_status', testimonialData.current_status);
+    formData.append('city_id', testimonialData.city_id); // Add city_id
+  formData.append('builder_id', testimonialData.builder_id); // Add builder_id
+  formData.append('community_id', testimonialData.community_id);
+    
+    // Append image file if provided
+    if (imageFile) {
+      formData.append('images', imageFile);
+    }
+
+    const response = await axios.post(
+      `${apiUrl}/addNewTestimonialRecord`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error adding testimonial:', error.message || error);
+    throw new Error(
+      error.response?.data?.message || 'Failed to add testimonial'
+    );
+  }
+};
+
+export const getTestimonials = async (id = null) => {
+  try {
+    const response = await axios.get(`${apiUrl}/getNewTestimonialRecord`, {
+      params: id ? { id } : {},
+    });
+    return response.data.result;
+  } catch (error) {
+    console.error('API Error:', error.response?.data, error.message);
+    if (error.response?.status === 404) {
+      throw new Error('No approved testimonials found.');
+    } else {
+      throw new Error(
+        error.response?.data?.error || 'Failed to fetch testimonials.'
+      );
+    }
+  }
+};
+
+

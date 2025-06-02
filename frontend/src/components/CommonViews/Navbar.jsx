@@ -73,6 +73,7 @@ const Navbar = () => {
   const handleLinkClick = (path) => {
     setIsMenuOpen(false);
     if (!isLogin) {
+      path=`/property/rent/${path}`;
       setIntendedPath(path);
       openModal();
     } else {
@@ -100,6 +101,13 @@ const Navbar = () => {
               alt="logo"
               className={`${tailwindStyles.logo}`}
             />
+            <div className="justify-self-start">
+              <span
+                className={`text-xs md:text-sm lg:text-md pl-1 tracking-widest text-white`}
+              >
+                Rentals
+              </span>
+            </div>
           </button>
 
           <div className="flex items-center space-x-6 lg:hidden z-30">
