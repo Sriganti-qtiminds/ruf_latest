@@ -20,7 +20,7 @@ const AboutSection = () => {
     if (!isLogin) {
       setLoginOpen(true);
     } else {
-      navigate(`/user/postProperties`);
+      navigate(`/property/rent/postProperties`);
     }
   };
 
@@ -53,7 +53,7 @@ const AboutSection = () => {
       <AuthModal
         isOpen={loginOpen}
         onClose={closeModel}
-        triggerBy={"postProperties"}
+        triggerBy={"/property/rent/postProperties"}
       />
     </>
   );

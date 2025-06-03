@@ -11,6 +11,7 @@ import Dropdown from "./hooks/dropdown";
 
 import "../../styles/animations.css";
 import CompactCallbackForm from "./Reqcallback";
+import TabNavigation from "../../../components/CommonViews/TabNavigation";
 
 const ContentOverlay = () => {
   const navigate = useNavigate();
@@ -89,14 +90,17 @@ const ContentOverlay = () => {
 
   return (
     <>
-      <div className="relative w-full flex flex-col items-center justify-center px-6 py-6 md:py-12 lg:py-20 bg-opacity-70">
+      <TabNavigation />
+
+      <div className="relative w-full flex flex-col items-center justify-center px-6 py-6 md:py-4 lg:py-10 bg-opacity-70">
         <div className="text-center text-white">
           <h1 className={`${tailwindStyles.heading_1} text-[#ffc107] mb-4`}>
-            Rufrent - Your Smart Rental Platform ONLY for Premium Gated Communities
+            Rufrent - Your Smart Rental Platform ONLY for Premium Gated
+            Communities
           </h1>
           <h1 className={`${tailwindStyles.heading_3} text-gray-200 mb-4`}>
             Find Your Perfect Rental in a Premium Gated Community in Hyderabad
-             {/* – Start Here
+            {/* – Start Here
             <span className="inline-block animate-pointing-finger text-2xl ml-2">
               👇
             </span> */}
