@@ -27,7 +27,7 @@ const CompactCallbackForm = () => {
   useEffect(() => {
     async function fetchCountries() {
       try {
-        const response = await axios.get("https://restcountries.com/v3.1/all");
+        const response = await axios.get("https://restcountries.com/v3.1/all?fields=name,cca2,flags,idd");
         const data = response.data.map((country) => ({
           name: country.name.common,
           code: country.idd?.root + (country.idd?.suffixes?.[0] || ""),
@@ -40,6 +40,8 @@ const CompactCallbackForm = () => {
         console.error("Failed to load country data:", error);
       }
     }
+
+   
 
     async function fetchUserTypes() {
       try {

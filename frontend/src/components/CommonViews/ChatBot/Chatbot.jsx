@@ -1,91 +1,290 @@
-// ChatbotModal.jsx
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { X } from "lucide-react";
 import tailwindStyles from "../../../utils/tailwindStyles";
+import responses from "./response.json";
+import communities from "./communities.json";
 
-const apiUrl = `${import.meta.env.VITE_API_URL}`;
+const apiUrl = `${import.meta.env.VITE_API_URL }`;
 
-const messageMap = {
-  start: {
-    message:
-      "👋 Welcome to RufRent - your one-stop solution for hassle-free renting and posting! Need help? Don't hesitate!",
-    options: [
-      { key: "1", text: "Property Posting Details 🏡" },
-      { key: "2", text: "Property Search Details 🔍" },
-      { key: "3", text: "Connecting With Us 📞" },
-      { key: "4", text: "Favourite Property Listings" },
-      { key: "0", text: "Request a CallBack" },
-    ],
-  },
-  1: {
-    message: "📌 Details for Posting a Property",
-    steps: [
-      "1️⃣ Click on this link: https://www.rufrent.com/user/postProperties",
-      "2️⃣ Complete Signup/Login Process",
-      "3️⃣ Click on [Post Property Free] Button",
-      "4️⃣ Fill All Required Details and Click On Submit Button",
-      "5️⃣ Property Posting is Successful, Will be Visible After Approvals",
-    ],
-    options: [{ key: "9", text: "Back to Main Menu" }],
-  },
-  2: {
-    message: "🔍 Details for Searching Property:",
-    steps: [
-      "1️⃣ Visit Link: https://www.rufrent.com/user",
-      "2️⃣ Apply required filters to get curated properties",
-      "3️⃣ Click on Connect to Relationship Manager Button for Further Assistance.",
-    ],
-    options: [{ key: "9", text: "Back to Main Menu" }],
-  },
-  3: {
-    message: "Contact Us: https://www.rufrent.com/footer/contact-us 📞",
-    options: [{ key: "9", text: "Back to Main Menu" }],
-  },
-  4: {
-    message: "📌 Favorites Details",
-    steps: [
-      "1️⃣ Click on the Link: https://www.rufrent.com/user/myfavorites",
-      "2️⃣ Find Favourite Properties",
-    ],
-    options: [{ key: "9", text: "Back to Main Menu" }],
-  },
-  9: {
-    message: "Main Menu",
-    options: [
-      { key: "1", text: "Property Posting Details 🏡" },
-      { key: "2", text: "Property Search Details 🔍" },
-      { key: "3", text: "Connecting With Us 📞" },
-      { key: "4", text: "Favourite Property Listings" },
-      { key: "0", text: "Request a CallBack" },
-    ],
-  },
-  0: {
-    message:
-      "Please fill out the form below for a CallBack from Relationship Manager",
-  },
+const VALID_COMMUNITIES = [
+    "Aparna Aura", "Aparna Avenues", "Aparna Boulevard", "Aparna Cyber Commune", "Aparna CyberLife",
+    "Aparna CyberZon", "Aparna Elixir", "Aparna Gardenia", "Aparna Grande", "Aparna Lake Breeze",
+    "Aparna Sarovar", "Aparna Serene Park", "Aparna Shangrila", "Aparna Silver Oaks", "Aparna WestSide",
+    "Aparna Zenith", "Fortune Nest", "Fortune Towers", "Hallmark Empyrean", "Hallmark Vicinia",
+    "Honer Aquantis", "Honer Vivantis", "Jayabheri Orange County", "Jayabheri Silicon County",
+    "Jayabheri Temple Tree", "Jayabheri The Meadows", "Jayabheri The Peak", "Jayabheri The Summit",
+    "Jayabheri Whistling Court", "L&T Serene County", "Lodha Bell Gardens", "Lodha Belleza Sky Villas",
+    "Lodha Burlingame Bellezza", "Lodha Codename 520", "Lodha Luxury Life Style", "Lodha Majesto",
+    "Lodha Meridian", "Lodha Meridian Super 60", "Myhome Abhra", "Myhome Ankura", "Myhome Avatar",
+    "Myhome Bhooja", "Myhome Jewel", "Myhome Krishe", "Myhome Mangala", "Myhome Navadeepa",
+    "Myhome Tarkshya", "Myhome Tridasa", "Myhome Vihanga", "NCC Nagarjuna Residency", "NCC Urban One",
+    "Prestige High Fields", "Prestige IVY League", "Prestige Tranquil Towers", "Rainbow vistas Marina Skies",
+    "Rainbow vistas Rock Garden", "Rajpushpa Atria", "Rajpushpa Cannon Dale", "Rajpushpa Eterna",
+    "Rajpushpa Green Dale", "Rajpushpa Open Skies", "Rajpushpa Regalia", "Rajpushpa Silicon Ridge",
+    "Rajpushpa The Retreat", "Ramky One Kosmos", "Ramky The Huddle", "Ramky Towers", "Ramky Tranquillas",
+    "Sumadhura AcroPolis", "Vasavi GP Trends", "Vasavi Shanthinikethan", "Vertex Panache",
+    "Vertex Pleasent", "Vertex Premio", "Vertex Prime", "Vertex Sadhgurukrupa"
+];
+
+
+function extractRoomAndArea(sentence) {
+    // Regex patterns
+    const roomRegex = /(\d+)\s*(?:bedroom|room|br|bd|beds?|rooms?|bhk)\b/i;
+    const areaRegex = /(\d+)\s*(?:sqm|sq\.?m|square\s*meters?|m²)\b/i;
+    const communityRegex = new RegExp(
+        `\\b(${communities.communities
+            .map(c => c.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'))
+            .join('|')})\\b`,
+        'i'
+    );
+
+    // Extract rooms
+    const rooms = (() => {
+        const match = sentence.match(roomRegex);
+        return match ? parseInt(match[1], 10) : null;
+    })();
+
+    // Extract area
+    const area = (() => {
+        const match = sentence.match(areaRegex);
+        return match ? parseInt(match[1], 10) : null;
+    })();
+
+    // Extract community - try exact match first, then partial match
+    let community = (() => {
+        // First try exact regex match
+        const exactMatch = sentence.match(communityRegex);
+        if (exactMatch) return exactMatch[1];
+        
+        // Fallback to partial matching
+        const lowerSentence = sentence.toLowerCase();
+        for (const validCommunity of communities.communities) {
+            const lowerCommunity = validCommunity.toLowerCase();
+            // Check if community name appears as whole words in sentence
+            if (new RegExp(`\\b${lowerCommunity}\\b/i`).test(lowerSentence)) {
+                return validCommunity;
+            }
+            // Check if at least 50% of words match
+            const communityWords = lowerCommunity.split(/\s+/);
+            const matchingWords = communityWords.filter(word => 
+                lowerSentence.includes(word)
+            );
+            if (matchingWords.length / communityWords.length >= 0.2) {
+                return validCommunity;
+            }
+        }
+        return null;
+    })();
+
+    return {
+        rooms: rooms,
+        area: area,
+        community: community
+    };
+}
+
+function generatePropertySearchUrl(rooms, community) {
+    let baseUrl = "https://www.rufrent.com/property/rent";
+    let params = new URLSearchParams();
+    
+    if (community) {
+        params.append("community", community);
+    }
+    
+    if (rooms) {
+        params.append("hometype", `${rooms} BHK`);
+    }
+    
+    return `${baseUrl}?${params.toString()}`;
+}
+
+const FormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, formErrors }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-xl max-w-md w-full relative shadow-xl transform transition-transform duration-300 scale-100">
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+
+        <h2 className="text-xl font-bold mb-4">Request Callback</h2>
+        {formErrors && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
+            {formErrors}
+          </div>
+        )}
+        <div className="space-y-4">
+          <select
+            name="userType"
+            value={formData.userType}
+            onChange={(e) => setFormData(prev => ({ ...prev, userType: e.target.value }))}
+            required
+            className="w-full p-2 border rounded text-gray-500 disabled:opacity-50"
+            disabled={formData.loadingUserTypes}
+          >
+            <option value="" disabled hidden>
+              {formData.loadingUserTypes ? "Loading..." : "Select"}
+            </option>
+            {formData.userTypes?.map((type) => (
+              <option key={type.id} value={type.category}>
+                {type.category}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="Your Name"
+            required
+            className="w-full p-2 border rounded disabled:opacity-50"
+            disabled={formData.isSubmitting}
+          />
+
+          <div className="flex items-center">
+            <div className="relative w-1/3 mr-2">
+              <button
+                type="button"
+                className="w-full p-2 border rounded flex items-center justify-between bg-white disabled:opacity-50"
+                onClick={() => setFormData(prev => ({ ...prev, isDropdownOpen: !prev.isDropdownOpen }))}
+                disabled={formData.isSubmitting}
+              >
+                {formData.selectedCountry ? (
+                  <div className="flex items-center space-x-2">
+                    <img
+                      src={formData.selectedCountry.flag}
+                      alt={formData.selectedCountry.name}
+                      className="w-5 h-5"
+                    />
+                    <span>{formData.selectedCountry.code}</span>
+                  </div>
+                ) : (
+                  <span>Code</span>
+                )}
+              </button>
+              {formData.isDropdownOpen && (
+                <div className="absolute z-10 mt-1 bg-white border rounded shadow-lg w-full min-w-[240px]">
+                  <div className="p-2 border-b">
+                    <input
+                      type="text"
+                      placeholder="Search countries"
+                      className="w-full p-2 border rounded text-gray-500"
+                      value={formData.searchTerm}
+                      onChange={(e) => setFormData(prev => ({ ...prev, searchTerm: e.target.value }))}
+                      autoFocus
+                    />
+                  </div>
+                  <ul className="max-h-60 overflow-y-auto">
+                    {formData.filteredCountries?.map((country, index) => (
+                      <li
+                        key={index}
+                        className="p-2 flex items-center cursor-pointer hover:bg-gray-100"
+                        onClick={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            selectedCountry: country,
+                            isDropdownOpen: false,
+                            searchTerm: ""
+                          }));
+                        }}
+                      >
+                        <img
+                          src={country.flag}
+                          alt={country.name}
+                          className="w-5 h-5 mr-2"
+                        />
+                        <span className="truncate">
+                          {country.name} {country.code}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <input
+              type="tel"
+              name="mobile"
+              value={formData.mobile}
+              onChange={(e) => {
+                if (e.target.value.length <= 10) {
+                  setFormData(prev => ({ ...prev, mobile: e.target.value }));
+                }
+              }}
+              placeholder="10-digit number"
+              required
+              minLength={10}
+              maxLength={10}
+              className="w-2/3 p-2 border rounded disabled:opacity-50"
+              disabled={formData.isSubmitting}
+            />
+          </div>
+          <p className="text-xs text-gray-500">
+            Enter your 10-digit mobile number
+          </p>
+
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border rounded text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              disabled={formData.isSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={formData.isSubmitting || formData.loadingUserTypes}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {formData.isSubmitting ? "Submitting..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const Chatbot = ({ onClose }) => {
   const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    city: "",
-    mobile_no: "",
-    time_slot: "",
-    purpose: "",
+    mobile: "",
+    userType: "",
+    countries: [],
+    selectedCountry: null,
+    isDropdownOpen: false,
+    searchTerm: "",
+    userTypes: [],
+    loadingUserTypes: false,
+    isSubmitting: false,
+    filteredCountries: []
   });
-  const [errors, setErrors] = useState({});
-  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
   const chatRef = useRef(null);
   const isMounted = useRef(false);
 
   useEffect(() => {
     if (!isMounted.current) {
       isMounted.current = true;
-      sendMessage("start");
+      setMessages([
+        {
+          type: "bot",
+          text: "👋 Welcome to RufRent - your one-stop solution for hassle-free renting and posting! How can I help you today?",
+        },
+      ]);
     }
   }, []);
 
@@ -96,152 +295,140 @@ const Chatbot = ({ onClose }) => {
         behavior: "smooth",
       });
     }
-  }, [messages, isTyping, showForm]); // Added dependencies to trigger scroll on all content changes
+  }, [messages, isTyping]);
 
-  const formatMessage = (text) => {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.split(urlRegex).map((part, index) =>
-      urlRegex.test(part) ? (
-        <a
-          key={index}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 underline hover:text-blue-800 transition-colors"
-        >
-          {part}
-        </a>
-      ) : (
-        <span key={index}>{part}</span>
-      )
-    );
-  };
-
-  const sendMessage = (key) => {
-    if (!messageMap[key]) {
-      setMessages((prev) => [
-        ...prev,
-        { type: "user", text: key },
-        {
-          type: "bot",
-          text: "Oops! I am still learning. Please select a valid option.",
-        },
-        ...messageMap["start"].options.map((opt) => ({
-          type: "bot",
-          text: `${opt.key}. ${opt.text}`,
-          clickable: true,
-          key: opt.key,
-        })),
-      ]);
-      return;
+  useEffect(() => {
+    async function fetchCountries() {
+      try {
+        const { data: countries }  = await axios.get("https://restcountries.com/v3.1/all?fields=name,cca2,flags,idd");
+        
+        const data = countries.map((country) => ({
+          name: country.name.common,
+          code: country.idd?.root + (country.idd?.suffixes?.[0] || ""),
+          flag: country.flags?.png || "",
+        }));
+        setFormData(prev => ({ ...prev, countries: data }));
+        const india = data.find((country) => country.name === "India");
+        if (india) setFormData(prev => ({ ...prev, selectedCountry: india }));
+      } catch (error) {
+        console.error("Failed to load country data:", error);
+      }
     }
 
-    setMessages((prev) => [...prev, { type: "user", text: key }]);
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const botResponse = messageMap[key];
-      const botMessages = [
-        { type: "bot", text: botResponse.message },
-        ...(botResponse.steps || []).map((step) => ({
-          type: "bot",
-          text: step,
-        })),
-        ...(botResponse.options || []).map((opt) => ({
-          type: "bot",
-          text: `${opt.key}. ${opt.text}`,
-          clickable: true,
-          key: opt.key,
-        })),
-      ];
-      setMessages((prev) => [...prev, ...botMessages]);
-      setIsTyping(false);
-      if (key === "0") {
-        setShowForm(true);
+    async function fetchUserTypes() {
+      try {
+        setFormData(prev => ({ ...prev, loadingUserTypes: true }));
+        const url = `${import.meta.env.VITE_API_URL}/getEnquirerCatCode`;
+        const response = await axios.get(url);
+        
+        if (response.data.success) {
+          setFormData(prev => ({ ...prev, userTypes: response.data.data }));
+        }
+      } catch (error) {
+        console.error("Failed to load user types:", error);
+      } finally {
+        setFormData(prev => ({ ...prev, loadingUserTypes: false }));
       }
-    }, 1000);
-  };
+    }
 
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    setErrors({
-      ...errors,
-      [name]: "",
-    });
-  };
+    if (showForm) {
+      fetchCountries();
+      fetchUserTypes();
+    }
+  }, [showForm]);
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = "Name is required";
-    else if (formData.name.trim().length > 50)
-      newErrors.name = "Name cannot exceed 50 characters";
-    if (!formData.city.trim()) newErrors.city = "City is required";
-    else if (formData.city.trim().length > 30)
-      newErrors.city = "City cannot exceed 30 characters";
-    if (!formData.mobile_no.trim())
-      newErrors.mobile_no = "Mobile number is required";
-    else if (!/^\d{10}$/.test(formData.mobile_no))
-      newErrors.mobile_no = "Mobile number must be exactly 10 digits";
-    if (!formData.time_slot.trim())
-      newErrors.time_slot = "Preferred time slot is required";
-    else if (formData.time_slot.trim().length > 30)
-      newErrors.time_slot = "Time slot cannot exceed 30 characters";
-    if (!formData.purpose.trim())
-      newErrors.purpose = "Purpose of contact is required";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  useEffect(() => {
+    if (formData.countries.length > 0) {
+      const filtered = formData.countries.filter((country) =>
+        country.name.toLowerCase().includes(formData.searchTerm.toLowerCase())
+      );
+      setFormData(prev => ({ ...prev, filteredCountries: filtered }));
+    }
+  }, [formData.searchTerm, formData.countries]);
+
+  const formatMessage = (text, isLink = false, buttonText = "Visit Page") => {
+    if (isLink) {
+      return (
+        <button
+          onClick={() => window.location.href = text}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mt-2"
+        >
+          <span>{buttonText}</span>
+          <svg
+            className="w-4 h-4 ml-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            />
+          </svg>
+        </button>
+      );
+    }
+    return <span>{text}</span>;
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    setFormError(null);
+    setFormData(prev => ({ ...prev, isSubmitting: true }));
 
-    setIsFormSubmitting(true);
+    // Validation
+    if (!formData.name || !formData.mobile || !formData.userType) {
+      setFormError("Please fill all required fields");
+      setFormData(prev => ({ ...prev, isSubmitting: false }));
+      return;
+    }
+
+    if (formData.mobile.length < 10) {
+      setFormError("Please enter a valid 10-digit mobile number");
+      setFormData(prev => ({ ...prev, isSubmitting: false }));
+      return;
+    }
+
     try {
-      const response = await axios.post(`${apiUrl}/addChatbotEntry`, formData);
-      if (response.status === 201) {
-        setMessages((prev) => [
-          ...prev,
-          { type: "bot", text: "Thank you! We will contact you shortly." },
-          {
-            type: "bot",
-            text: "Back to Main Menu",
-            clickable: true,
-            key: "9",
-          },
-        ]);
-        setShowForm(false);
-        alert("Thank you!, we will contact you soon");
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            type: "bot",
-            text: "Failed to submit your details. Please try again later.",
-          },
-          {
-            type: "bot",
-            text: "Back to Main Menu",
-            clickable: true,
-            key: "9",
-          },
-        ]);
-        alert("Failed to submit your details. Please try again later");
+      const selectedUserType = formData.userTypes.find(
+        (type) => type.category.toLowerCase() === formData.userType.toLowerCase()
+      );
+
+      if (!selectedUserType) {
+        throw new Error("Invalid user type selected");
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
+
+      const payload = {
+        usercat: selectedUserType.id,
+        name: formData.name,
+        country_code: formData.selectedCountry.code,
+        mobile_no: formData.mobile,         
+        status: 25,
+      };
+
+      const url = `${import.meta.env.VITE_API_URL}/addNewEnquiryRecord`;        
+      const response = await fetch(
+        url,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Request failed");
+      }
+
       setMessages((prev) => [
         ...prev,
-        {
-          type: "bot",
-          text:
-            error?.response?.data?.message ||
-            "An error occurred. Please try again later.",
-        },
+        { type: "bot", text: "Thank you! We will contact you shortly." },
         {
           type: "bot",
           text: "Back to Main Menu",
@@ -249,213 +436,222 @@ const Chatbot = ({ onClose }) => {
           key: "9",
         },
       ]);
-      alert(
-        error?.response?.data?.message ||
-          "An error occurred. Please try again later."
-      );
+      setShowForm(false);
+      setFormData({
+        name: "",
+        mobile: "",
+        userType: "",
+        countries: [],
+        selectedCountry: null,
+        isDropdownOpen: false,
+        searchTerm: "",
+        userTypes: [],
+        loadingUserTypes: false,
+        isSubmitting: false,
+        filteredCountries: []
+      });
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setFormError(error.message);
     } finally {
-      setIsFormSubmitting(false);
+      setFormData(prev => ({ ...prev, isSubmitting: false }));
     }
   };
 
-  const handleCloseForm = () => {
-    setShowForm(false);
-  };
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!inputMessage.trim()) return;
 
-  const handleBotMessageClick = (message) => {
-    if (message.clickable && message.key) {
-      sendMessage(message.key);
+    setMessages((prev) => [...prev, { type: "user", text: inputMessage }]);
+    setInputMessage("");
+    setIsTyping(true);
+
+    try {
+      // Check for 'Favourite' keyword before classification
+      if (/favourite/i.test(inputMessage)) {
+        const intentId = 4;
+        const intent = responses.intents.find(i => i.intent_id === intentId);
+        if (intent) {
+          setMessages(prev => [...prev, {
+            type: "bot",
+            text: intent.title
+          }]);
+          if (intent.steps) {
+            intent.steps.forEach(step => {
+              setMessages(prev => [...prev, {
+                type: "bot",
+                text: step
+              }]);
+            });
+          }
+          if (intent.link) {
+            setMessages(prev => [...prev, {
+              type: "bot",
+              text: intent.link,
+              isLink: true,
+              buttonText: intent.button_text || "Visit Page"
+            }]);
+          }
+        }
+        setIsTyping(false);
+        return;
+      }
+      const response = await axios.post(`${apiUrl}/chatbot/classify`, {
+        message: inputMessage,
+      });
+
+      const intentId = parseInt(response.data.predictedClass);
+      
+      if (intentId === 0) {
+        setShowForm(true);
+        setMessages(prev => [...prev, {
+          type: "bot",
+          text: "I'll help you schedule a callback. Please fill out the form below:"
+        }]);
+        setIsTyping(false);
+        return;
+      }
+
+      const intent = responses.intents.find(i => i.intent_id === intentId);
+      
+      if (intent) {
+        setMessages(prev => [...prev, {
+          type: "bot",
+          text: intent.title
+        }]);
+
+        if (intent.steps) {
+          intent.steps.forEach(step => {
+            setMessages(prev => [...prev, {
+              type: "bot",
+              text: step
+            }]);
+          });
+        }
+
+        if (intent.intent_id === 2) {
+          const { rooms, community } = extractRoomAndArea(inputMessage);
+          const searchUrl = generatePropertySearchUrl(rooms, community);
+          setMessages(prev => [...prev, {
+            type: "bot",
+            text: searchUrl,
+            isLink: true,
+            buttonText: intent.button_text || "Explore More Properties"
+          }]);
+        } else if (intent.link) {
+          setMessages(prev => [...prev, {
+            type: "bot",
+            text: intent.link,
+            isLink: true,
+            buttonText: intent.button_text || "Visit Page"
+          }]);
+        }
+      } else {
+        setMessages(prev => [...prev, {
+          type: "bot",
+          text: "I'm not sure how to help with that. Could you please rephrase your question?"
+        }]);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setMessages(prev => [...prev, {
+        type: "bot",
+        text: "I apologize, but I'm having trouble processing your request right now. Please try again later."
+      }]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg shadow-md">
-        <h2 className={`${tailwindStyles.heading_3} text-white`}>
-          💬 RUFI - Your Virtual Assistant
-        </h2>
+    <div className="fixed bottom-4 right-4 w-96 h-[600px] bg-white rounded-lg shadow-lg flex flex-col z-50">
+      <div className="flex justify-between items-center p-4 border-b">
+        <h2 className={`${tailwindStyles.heading_2}`}>Chat with us</h2>
         <button
           onClick={onClose}
-          className="p-1 hover:bg-white/20 rounded-full transition-colors"
+          className="p-1 hover:bg-gray-100 rounded-full transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
       </div>
+
       <div
         ref={chatRef}
-        className="flex-1 p-4 space-y-4  overflow-y-auto bg-white max-h-[calc(70vh-72px)]" // Adjusted max height to account for header
-        style={{ scrollbarWidth: "thin", scrollbarColor: "#93c5fd #fff" }}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
       >
-        {messages.map((msg, index) => (
+        {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[80%] p-3 rounded-xl shadow-sm ${tailwindStyles.paragraph} ${
-                msg.type === "user"
+              className={`max-w-[80%] rounded-lg p-3 ${
+                message.type === "user"
                   ? "bg-blue-500 text-white"
-                  : msg.clickable
-                    ? "bg-blue-50 text-blue-800 hover:bg-blue-100 cursor-pointer transition-colors"
-                    : "bg-gray-100 text-gray-800"
+                  : "bg-gray-100 text-gray-800"
               }`}
-              onClick={() => handleBotMessageClick(msg)}
             >
-              {formatMessage(msg.text)}
+              {formatMessage(message.text, message.isLink, message.buttonText)}
             </div>
           </div>
         ))}
         {isTyping && (
           <div className="flex justify-start">
-            <div className="p-3 bg-gray-100 rounded-xl shadow-sm text-gray-600">
-              <span className="flex items-center gap-1">
-                <span className="animate-bounce">•</span>
-                <span className="animate-bounce delay-100">•</span>
-                <span className="animate-bounce delay-200">•</span>
-              </span>
-            </div>
-          </div>
-        )}
-        {showForm && (
-          <div className="flex justify-start">
-            <div className="w-full p-4 bg-gray-50 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={tailwindStyles.heading_3}>Request a Callback</h3>
+            <div className="bg-gray-100 rounded-lg p-3">
+              <div className="flex space-x-2">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
               </div>
-              <form onSubmit={handleFormSubmit} className="space-y-3">
-                <div className="grid grid-cols-4 items-center">
-                  <label className={`${tailwindStyles.paragraph_b} col-span-1`}>
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Name"
-                    value={formData.name}
-                    onChange={handleFormChange}
-                    required
-                    className={`${tailwindStyles.paragraph} border px-4 py-2 rounded-md col-span-3`}
-                  />
-                  {errors.name && (
-                    <p className="text-xs text-red-500 mt-1">{errors.name}</p>
-                  )}
-                </div>
-                <div className="grid grid-cols-4 items-center">
-                  <label className={`${tailwindStyles.paragraph_b} col-span-1`}>
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    placeholder="City"
-                    value={formData.city}
-                    onChange={handleFormChange}
-                    required
-                    className={`${tailwindStyles.paragraph} border px-4 py-2 rounded-md w-full col-span-3`}
-                  />
-                  {errors.city && (
-                    <p className="text-xs text-red-500 mt-1">{errors.city}</p>
-                  )}
-                </div>
-                <div className="grid grid-cols-4 items-center">
-                  <label className={`${tailwindStyles.paragraph_b} col-span-1`}>
-                    Mobile Number *
-                  </label>
-                  <input
-                    type="tel"
-                    name="mobile_no"
-                    placeholder="1234567890"
-                    value={formData.mobile_no}
-                    onChange={handleFormChange}
-                    required
-                    className={`${tailwindStyles.paragraph} border px-4 py-2 rounded-md w-full col-span-3`}
-                  />
-                  {errors.mobile_no && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.mobile_no}
-                    </p>
-                  )}
-                </div>
-                <div className="grid grid-cols-4 items-center">
-                  <label className={`${tailwindStyles.paragraph_b} col-span-1`}>
-                    Preferred Time Slot *
-                  </label>
-                  <input
-                    type="text"
-                    name="time_slot"
-                    placeholder="Preferred Time Slot"
-                    value={formData.time_slot}
-                    onChange={handleFormChange}
-                    required
-                    className={`${tailwindStyles.paragraph} border px-4 py-2 rounded-md w-full col-span-3`}
-                  />
-                  {errors.time_slot && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.time_slot}
-                    </p>
-                  )}
-                </div>
-                <div className="grid grid-cols-4 items-center">
-                  <label className={`${tailwindStyles.paragraph_b} col-span-1`}>
-                    Purpose of Contact *
-                  </label>
-                  <select
-                    name="purpose"
-                    value={formData.purpose}
-                    onChange={handleFormChange}
-                    required
-                    className={`${tailwindStyles.paragraph} border px-4 py-2 rounded-md w-full col-span-3`}
-                  >
-                    <option value="" disabled>
-                      Select Purpose
-                    </option>
-                    <option value="General Inquiry">General Inquiry</option>
-                    <option value="Property Posting">Property Posting</option>
-                    <option value="Property Finding">Property Finding</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  {errors.purpose && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.purpose}
-                    </p>
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  disabled={isFormSubmitting}
-                  className={`${tailwindStyles.secondaryButton} self-end`}
-                >
-                  {isFormSubmitting ? "Submitting..." : "Submit"}
-                </button>
-              </form>
             </div>
           </div>
         )}
       </div>
+
+      <form onSubmit={handleSendMessage} className="p-4 border-t">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder="Type your message..."
+            className={`${tailwindStyles.paragraph} flex-1 border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          <button
+            type="submit"
+            className={`${tailwindStyles.secondaryButton} px-4`}
+          >
+            Send
+          </button>
+        </div>
+      </form>
+
+      <FormModal
+        isOpen={showForm}
+        onClose={() => {
+          setShowForm(false);
+          setFormData({
+            name: "",
+            mobile: "",
+            userType: "",
+            countries: [],
+            selectedCountry: null,
+            isDropdownOpen: false,
+            searchTerm: "",
+            userTypes: [],
+            loadingUserTypes: false,
+            isSubmitting: false,
+            filteredCountries: []
+          });
+          setFormError(null);
+        }}
+        onSubmit={handleFormSubmit}
+        formData={formData}
+        setFormData={setFormData}
+        formErrors={formError}
+      />
     </div>
   );
 };
 
-const ChatbotModal = ({ isOpen, onClose, buttonRef }) => {
-  if (!isOpen) return null;
-
-  const buttonRect = buttonRef.current?.getBoundingClientRect();
-  const style = buttonRect
-    ? {
-        position: "fixed",
-        bottom: `${window.innerHeight - buttonRect.top + 20}px`,
-        right: `${window.innerWidth - buttonRect.right + 10}px`,
-        zIndex: 50,
-      }
-    : {};
-
-  return (
-    <div style={style}>
-      <div className="w-[100%] md:w-64 lg:w-96 h-[70vh] bg-white rounded-lg shadow-xl flex flex-col border border-gray-100 overflow-hidden">
-        <Chatbot onClose={onClose} />
-      </div>
-    </div>
-  );
-};
-
-export default ChatbotModal;
+export default Chatbot;

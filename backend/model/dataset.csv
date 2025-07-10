@@ -1,0 +1,714 @@
+Text,Label
+"I want to list my apartment for rent",1
+"How do I post a new property?",1
+"Can I add photos to my rental listing?",1
+"I need to update my property's availability",1
+"Where do I manage my rental details?",1
+"How to advertise my house for rent?",1
+"I want a 3bhk house in andheri",2
+"I am looking for a 3bhk house in andheri",2
+"Find me a 3bhk house in andheri",2
+"Show me 3bhk houses in andheri",2
+"Need a 3bhk house in andheri",2
+"I want a 2bhk apartment in bandra",2
+"Looking for 2bhk apartments in bandra",2
+"Find 2bhk flats in bandra",2
+"Show me 2bhk properties in bandra",2
+"Need a 2bhk house in bandra",2
+"I want a 1bhk flat in powai",2
+"Looking for 1bhk apartments in powai",2
+"Find 1bhk houses in powai",2
+"Show me 1bhk properties in powai",2
+"Need a 1bhk flat in powai",2
+"I want a 4bhk house in juhu",2
+"Looking for 4bhk apartments in juhu",2
+"Find 4bhk flats in juhu",2
+"Show me 4bhk properties in juhu",2
+"Need a 4bhk house in juhu",2
+"I want a 3 bedroom house in andheri",2
+"I am looking for a 3 bedroom house in andheri",2
+"Find me a 3 bedroom house in andheri",2
+"Show me 3 bedroom houses in andheri",2
+"Need a 3 bedroom house in andheri",2
+"I want a 2 bedroom apartment in bandra",2
+"Looking for 2 bedroom apartments in bandra",2
+"Find 2 bedroom flats in bandra",2
+"Show me 2 bedroom properties in bandra",2
+"Need a 2 bedroom house in bandra",2
+"I want a 1 bedroom flat in powai",2
+"Looking for 1 bedroom apartments in powai",2
+"Find 1 bedroom houses in powai",2
+"Show me 1 bedroom properties in powai",2
+"Need a 1 bedroom flat in powai",2
+"I want a 4 bedroom house in juhu",2
+"Looking for 4 bedroom apartments in juhu",2
+"Find 4 bedroom flats in juhu",2
+"Show me 4 bedroom properties in juhu",2
+"Need a 4 bedroom house in juhu",2
+"I want a 3bhk house",2
+"I am looking for a 3bhk house",2
+"Find me a 3bhk house",2
+"Show me 3bhk houses",2
+"Need a 3bhk house",2
+"I want a 2bhk apartment",2
+"Looking for 2bhk apartments",2
+"Find 2bhk flats",2
+"Show me 2bhk properties",2
+"Need a 2bhk house",2
+"I want a 1bhk flat",2
+"Looking for 1bhk apartments",2
+"Find 1bhk houses",2
+"Show me 1bhk properties",2
+"Need a 1bhk flat",2
+"I want a 4bhk house",2
+"Looking for 4bhk apartments",2
+"Find 4bhk flats",2
+"Show me 4bhk properties",2
+"Need a 4bhk house",2
+"I want a house in andheri",2
+"I am looking for a house in andheri",2
+"Find me a house in andheri",2
+"Show me houses in andheri",2
+"Need a house in andheri",2
+"I want an apartment in bandra",2
+"Looking for apartments in bandra",2
+"Find flats in bandra",2
+"Show me properties in bandra",2
+"Need an apartment in bandra",2
+"I want a flat in powai",2
+"Looking for flats in powai",2
+"Find houses in powai",2
+"Show me properties in powai",2
+"Need a flat in powai",2
+"I want a house in juhu",2
+"Looking for houses in juhu",2
+"Find apartments in juhu",2
+"Show me properties in juhu",2
+"Need a house in juhu",2
+"I want a furnished 3bhk house in andheri",2
+"I am looking for a furnished 3bhk house in andheri",2
+"Find me a furnished 3bhk house in andheri",2
+"Show me furnished 3bhk houses in andheri",2
+"Need a furnished 3bhk house in andheri",2
+"I want an unfurnished 2bhk apartment in bandra",2
+"Looking for unfurnished 2bhk apartments in bandra",2
+"Find unfurnished 2bhk flats in bandra",2
+"Show me unfurnished 2bhk properties in bandra",2
+"Need an unfurnished 2bhk house in bandra",2
+"I want a semi-furnished 1bhk flat in powai",2
+"Looking for semi-furnished 1bhk apartments in powai",2
+"Find semi-furnished 1bhk houses in powai",2
+"Show me semi-furnished 1bhk properties in powai",2
+"Need a semi-furnished 1bhk flat in powai",2
+"I want a pet-friendly 3bhk house in andheri",2
+"I am looking for a pet-friendly 3bhk house in andheri",2
+"Find me a pet-friendly 3bhk house in andheri",2
+"Show me pet-friendly 3bhk houses in andheri",2
+"Need a pet-friendly 3bhk house in andheri",2
+"I want a house with parking in bandra",2
+"Looking for houses with parking in bandra",2
+"Find apartments with parking in bandra",2
+"Show me properties with parking in bandra",2
+"Need a house with parking in bandra",2
+"I want a house with a garden in powai",2
+"Looking for houses with a garden in powai",2
+"Find apartments with a garden in powai",2
+"Show me properties with a garden in powai",2
+"Need a house with a garden in powai",2
+"I want a house with a pool in juhu",2
+"Looking for houses with a pool in juhu",2
+"Find apartments with a pool in juhu",2
+"Show me properties with a pool in juhu",2
+"Need a house with a pool in juhu",2
+"I want a house with a gym in andheri",2
+"Looking for houses with a gym in andheri",2
+"Find apartments with a gym in andheri",2
+"Show me properties with a gym in andheri",2
+"Need a house with a gym in andheri",2
+"I want a house with security in bandra",2
+"Looking for houses with security in bandra",2
+"Find apartments with security in bandra",2
+"Show me properties with security in bandra",2
+"Need a house with security in bandra",2
+"I want a house with a lift in powai",2
+"Looking for houses with a lift in powai",2
+"Find apartments with a lift in powai",2
+"Show me properties with a lift in powai",2
+"Need a house with a lift in powai",2
+"I want a house with a balcony in juhu",2
+"Looking for houses with a balcony in juhu",2
+"Find apartments with a balcony in juhu",2
+"Show me properties with a balcony in juhu",2
+"Need a house with a balcony in juhu",2
+"How do I get in touch with customer support?",3
+"I have a question about my account",3
+"Is there a phone number I can call?",3
+"How do I report an issue with the website?",3
+"Can I schedule a viewing directly through the site?",3
+"What are your office hours?",3
+"I forgot my password",3
+"Where can I see my saved properties?",4
+"How do I add a property to my favorites?",4
+"Can I remove a listing from my favorite list?",4
+"Why isn't this property showing in my favorites?",4
+"I want to share my favorite listings with a friend",4
+"Please call me back at 123-456-7890",0
+"I'd like someone to contact me about a property",0
+"Can you give me a call regarding my inquiry?",0
+"Requesting a callback for property ID 5678",0
+"When can someone reach out to me?",0
+"I want to post a room for rent",1
+"My landlord wants to list a new unit",1
+"What's the process for posting a single room?",1
+"Looking for rentals in downtown",2
+"Show me properties with more than 3 bathrooms",2
+"I need to find a short-term rental",2
+"Do you have offices in other cities?",3
+"Who can I speak to about a general inquiry?",3
+"Where are my preferred properties?",4
+"My favourite list seems empty",4
+"Can you ring me back soon?",0
+"Please arrange a call for me",0
+"I want to rent out my spare room",1
+"Put my flat on your website",1
+"I'm searching for apartments available next month",2
+"Find me affordable studio apartments",2
+"Can I speak to a live agent?",3
+"I need to talk to someone",3
+"My saved homes are gone",4
+"Where did my starred properties go?",4
+"Give me a call as soon as possible",0
+"Connect me with an agent",0
+"I want to put my house up for rent",1
+"How do I list my rental property?",1
+"Can I edit my current property listing?",1
+"What's the cost to list a property?",1
+"I need to remove my listing",1
+"Tell me about listing a commercial space",1
+"How to upload videos for my property?",1
+"I need to change the rental price",1
+"Can I pause my listing temporarily?",1
+"What are the requirements for property photos?",1
+"I'm struggling to post my apartment",1
+"Help me create a new rental advertisement",1
+"How do I feature my property?",1
+"Can I list multiple properties?",1
+"Where do I see my active listings?",1
+"I want to find a 1-bedroom apartment",2
+"Search for houses with a garden",2
+"Show me pet-friendly rentals",2
+"Looking for properties under $1000",2
+"Find apartments for rent in the suburbs",2
+"I need a rental with good public transport access",2
+"Are there any furnished apartments available?",2
+"Can I search for specific amenities like a gym?",2
+"Show me properties near XYZ hospital",2
+"Filter by properties with a balcony",2
+"I'm searching for short-term leases",2
+"Find me family-friendly homes",2
+"What are the options for student housing?",2
+"Show me available studios",2
+"I need a house for rent with 3 beds",2
+"Search for rentals with a pool",2
+"Are there any properties suitable for a large family?",2
+"Show me townhouses for rent",2
+"I need an accessible apartment",2
+"Find properties with an in-unit washer/dryer",2
+"Looking for properties in the quiet neighborhoods",2
+"Can I search by school district?",2
+"Show me properties available immediately",2
+"Filter by properties with a garage",2
+"I want to rent a place with a view",2
+"How do I contact your support team?",3
+"I have a general inquiry",3
+"Can I get help with my property search?",3
+"I need technical assistance",3
+"What's your email address?",3
+"How do I give feedback?",3
+"I'd like to talk to a sales representative",3
+"Is there a chat option?",3
+"Can I speak to someone about a specific listing?",3
+"How do I report a scam?",3
+"What are your contact hours?",3
+"I need help navigating the site",3
+"Where can I find your terms and conditions?",3
+"Do you have a FAQ section?",3
+"I need to reset my account",3
+"Can I see my bookmarked properties?",4
+"How do I view my saved searches?",4
+"I accidentally deleted a favorite, can I restore it?",4
+"Can I organize my favorite properties into folders?",4
+"Show me my recently viewed properties",4
+"I want to compare my favorite listings",4
+"Why can't I access my favorites?",4
+"How do I share my saved listings with family?",4
+"Can I add notes to my favorite properties?",4
+"My favorite list isn't loading",4
+"I need to remove several properties from my favorites",4
+"Where is my wishlist?",4
+"Can I set up alerts for my favorite properties?",4
+"Show me only properties that are still available from my favorites",4
+"I want to request a callback regarding a property",0
+"Please call me back about my application",0
+"Can an agent call me at your earliest convenience?",0
+"I'd like to schedule a call",0
+"I need someone to get in touch with me",0
+"Could you arrange for a phone call?",0
+"I need to discuss a listing, please call",0
+"When is the best time for a callback?",0
+"Please have an agent call me",0
+"I want to talk to someone on the phone",0
+"Call me to discuss property details",0
+"I'm interested in a callback about my property",0
+"Please provide a callback on my query",0
+"Can I get a call about my property listing?",0
+"Ring me back at your earliest convenience",0
+"I need assistance with my listing, call me",0
+"Requesting a call about a new rental",0
+"Callback needed for a lease question",0
+"Can you give me a call back about my account?",0
+"Schedule a call for property ID 1234",0
+"I need to talk to someone about my rental options",0
+"Please call me to discuss my property search",0
+"Arrange a callback for an urgent matter",0
+"I want to talk to an expert, call me",0
+"Could I get a call back about finding a new home?",0
+"I want to list my vacant commercial space",1
+"How do I post a new commercial property?",1
+"Can I add floor plans to my commercial listing?",1
+"I need to update my office space availability",1
+"Where do I manage my commercial rental details?",1
+"How to advertise my retail space for rent?",1
+"I'm looking for a retail space in downtown",2
+"Find me commercial properties under $5000",2
+"Show me available office spaces near the business district",2
+"Are there any commercial properties with high foot traffic?",2
+"Filter results by industrial properties",2
+"I need a commercial space with loading docks",2
+"What's the average rent for an office in this area?",2
+"Can I search for industrial properties?",2
+"How do I get in touch with commercial support?",3
+"I have a question about my commercial account",3
+"Is there a direct phone number for commercial inquiries?",3
+"How do I report an issue with the commercial section?",3
+"Can I schedule a viewing for a commercial property directly through the site?",3
+"What are your commercial support hours?",3
+"I forgot my commercial account password",3
+"Where can I see my saved commercial properties?",4
+"How do I add a commercial property to my favorites?",4
+"Can I remove a commercial listing from my favorite list?",4
+"Why isn't this commercial property showing in my favorites?",4
+"I want to share my favorite commercial listings with a colleague",4
+"Please call me back about a commercial property at 987-654-3210",0
+"I'd like someone to contact me about a commercial space",0
+"Can you give me a call regarding my commercial inquiry?",0
+"Requesting a callback for commercial property ID 91011",0
+"When can someone reach out to me about my commercial needs?",0
+"I want to post a showroom for rent",1
+"My company wants to list a new office unit",1
+"What's the process for posting a single commercial room?",1
+"Looking for commercial rentals in the financial district",2
+"Show me commercial properties with more than 5 meeting rooms",2
+"I need to find a long-term commercial lease",2
+"Do you have commercial offices in other regions?",3
+"Who can I speak to about a general commercial inquiry?",3
+"Where are my preferred commercial properties?",4
+"My commercial favorite list seems empty",4
+"Can you ring me back soon about commercial properties?",0
+"Please arrange a commercial call for me",0
+"I want to rent out my spare commercial space",1
+"Put my commercial flat on your website",1
+"I'm searching for commercial properties available next quarter",2
+"Find me affordable commercial office spaces",2
+"Can I speak to a live commercial agent?",3
+"I need to talk to someone about commercial listings",3
+"My saved commercial homes are gone",4
+"Where did my starred commercial properties go?",4
+"Give me a call about commercial properties as soon as possible",0
+"Connect me with a commercial agent",0
+"I need to list my residential property",1
+"How to advertise a house for rent?",1
+"Can I list a room for rent?",1
+"I want to put up a new apartment listing",1
+"Help me with my property advertisement",1
+"What's the process for posting a flat?",1
+"How to get my rental unit noticed?",1
+"I need to modify my active property",1
+"Can I include a virtual tour for my listing?",1
+"How to make my property stand out?",1
+"I want to delete my rental advertisement",1
+"Can I extend my listing period?",1
+"How do I review applications for my property?",1
+"Where can I find landlord resources?",1
+"I want to know about rental agreements",1
+"Looking for apartments in the downtown area",2
+"Find me a studio apartment",2
+"Show me 3 bedroom houses for rent",2
+"Are there any cheap rentals available?",2
+"Filter properties by specific school districts",2
+"I need a rental with a garage",2
+"What are the utilities included in rent?",2
+"Can I search for apartments with a gym and pool?",2
+"Show me properties near public transportation",2
+"Filter by properties with hardwood floors",2
+"I'm searching for short-term rentals",2
+"Find me pet-friendly apartments",2
+"What are the options for military housing?",2
+"Show me available condominiums",2
+"I need a duplex for rent",2
+"Search for properties with a private patio",2
+"Are there any properties for low income families?",2
+"Show me loft apartments for rent",2
+"I need a single family home",2
+"Find properties with a fireplace",2
+"Looking for apartments with a city view",2
+"Can I search by commute time?",2
+"Show me properties with an updated kitchen",2
+"Filter by properties with a basement",2
+"I want to rent a property near the park",2
+"How can I reach customer service?",3
+"I have a billing question",3
+"Can I get support with my account?",3
+"I need to report a website bug",3
+"What's the best way to contact you?",3
+"How do I submit a complaint?",3
+"I'd like to speak with a manager",3
+"Is there a live chat available?",3
+"Can I get help with a specific landlord?",3
+"How do I report misleading information?",3
+"What are your holiday hours?",3
+"I need assistance with a payment",3
+"Where can I find your privacy policy?",3
+"Do you offer tutorials?",3
+"I need help with my login",3
+"Can I view my saved homes?",4
+"How do I manage my saved searches?",4
+"I want to remove a property from my watch list",4
+"Can I get notifications for new favorite properties?",4
+"Show me properties I've recently favorited",4
+"I want to compare my favorite apartments",4
+"Why are my favorites not saving?",4
+"How do I export my favorite listings?",4
+"Can I add comments to my saved properties?",4
+"My favorite list is not updating",4
+"I need to clean up my favorite list",4
+"Where is my saved property list?",4
+"Can I receive alerts for price drops on my favorites?",4
+"Show me properties that are still active from my saved list",4
+"I want to request a phone call regarding a rental",0
+"Please call me about my inquiry",0
+"Can an agent contact me about my property?",0
+"I'd like to arrange a call back",0
+"I need someone to call me back",0
+"Could you please phone me?",0
+"I need to discuss my lease, call me please",0
+"When is the soonest I can get a call back?",0
+"Please have an agent contact me",0
+"I want to speak to a human",0
+"Call me to confirm my viewing appointment",0
+"I'm interested in a call back about a new property",0
+"Please provide a call about my account issue",0
+"Can I get a call about selling my property?",0
+"Ring me when you're available",0
+"I need assistance with my search, call me",0
+"Requesting a call about lease terms",0
+"Callback needed for a property inspection",0
+"Can you give me a call back about a general question?",0
+"Schedule a call for a new listing",0
+"I need to talk to someone about specific property requirements",0
+"Please call me to discuss an upcoming viewing",0
+"Arrange a callback for property advice",0
+"I want to talk to an advisor, call me",0
+"Could I get a call back about my rental application status?",0
+"I wish to post my vacation rental",1
+"How do I advertise my holiday home?",1
+"Can I list a short-term rental?",1
+"I need to manage my seasonal property",1
+"Where do I add details for my holiday apartment?",1
+"How to update my vacation rental calendar?",1
+"I'm looking for a vacation rental in Florida",2
+"Find me holiday homes with a private beach",2
+"Show me available villas for rent",2
+"Are there any pet-friendly vacation rentals?",2
+"Filter results by properties with a hot tub",2
+"I need a rental with a fully equipped kitchen",2
+"What's the average nightly rate for a cabin?",2
+"Can I search for eco-friendly rentals?",2
+"How do I contact vacation rental support?",3
+"I have a question about my vacation rental booking",3
+"Is there a phone number for holiday rental inquiries?",3
+"How do I report an issue with a vacation rental?",3
+"Can I schedule a call about a holiday booking?",3
+"What are your vacation rental support hours?",3
+"I forgot my vacation rental account password",3
+"Where can I see my saved vacation rentals?",4
+"How do I add a holiday rental to my favorites?",4
+"Can I remove a vacation listing from my favorite list?",4
+"Why isn't this holiday property showing in my favorites?",4
+"I want to share my favorite vacation rentals with my travel group",4
+"Please call me back at 111-222-3333 regarding a holiday rental",0
+"I'd like someone to contact me about a vacation home",0
+"Can you give me a call regarding my holiday rental inquiry?",0
+"Requesting a callback for vacation rental ID 7777",0
+"When can someone reach out to me about my vacation rental needs?",0
+"I want to post a holiday cottage for rent",1
+"My family wants to list a new villa",1
+"What's the process for posting a single holiday room?",1
+"Looking for vacation rentals near the mountains",2
+"Show me holiday properties with a private pool",2
+"I need to find a week-long vacation rental",2
+"Do you have vacation rental offices in other countries?",3
+"Who can I speak to about a general holiday rental inquiry?",3
+"Where are my preferred vacation rentals?",4
+"My holiday favorite list seems empty",4
+"Can you ring me back soon about vacation rentals?",0
+"Please arrange a holiday call for me",0
+"I want to rent out my spare holiday apartment",1
+"Put my holiday villa on your website",1
+"I'm searching for vacation rentals available next summer",2
+"Find me affordable holiday rentals by the sea",2
+"Can I speak to a live vacation rental agent?",3
+"I need to talk to someone about holiday listings",3
+"My saved holiday homes are gone",4
+"Where did my starred vacation properties go?",4
+"Give me a call about vacation rentals as soon as possible",0
+"Connect me with a holiday rental agent",0
+"I want to list my timeshare for rent",1
+"How do I put my cottage up for rent?",1
+"Can I add a video tour to my property listing?",1
+"I need to update my house's availability",1
+"Where do I manage my rental property information?",1
+"How to post an apartment for rent quickly?",1
+"I'm looking for a house with at least 4 bedrooms",2
+"Find me properties in the range of $800 to $1200",2
+"Show me available apartments for rent in the city center",2
+"Are there any furnished houses for rent?",2
+"Filter results to show only properties with a backyard",2
+"I need a rental near a good school",2
+"What are the current rental trends for family homes?",2
+"Can I search for short-term corporate housing?",2
+"How do I contact your support team for technical issues?",3
+"I have a question about my subscription",3
+"Is there a general inquiry line?",3
+"How do I report a fraudulent listing?",3
+"Can I get assistance with my account login?",3
+"What is your business contact information?",3
+"I forgot my username",3
+"Where can I view my recently favorited properties?",4
+"How do I remove multiple properties from my favorites?",4
+"Can I get email updates on my saved properties?",4
+"Why can't I access my favorite list?",4
+"I want to share my saved properties via email",4
+"Please call me back at my office number",0
+"I'd like to speak with someone about a property dispute",0
+"Can you arrange a call for my urgent matter?",0
+"Requesting a callback for general information",0
+"When can an agent follow up with me?",0
+"I want to list my property as a rental",1
+"How to get my apartment listed?",1
+"What's the procedure for posting a new rental?",1
+"I need to edit my current listing",1
+"Can I update my property's pictures?",1
+"How to add virtual staging to my listing?",1
+"I'm looking for a single-family home with a yard",2
+"Find me properties available next month",2
+"Show me rentals with an in-unit laundry",2
+"Are there any rentals under $2000 in this area?",2
+"Filter properties by specific neighborhoods",2
+"I need a rental with a garage",2
+"What are the options for accessible housing?",2
+"Can I search for income-restricted properties?",2
+"How can I reach your customer service team?",3
+"I have a general inquiry about your services",3
+"Is there a way to chat with a representative?",3
+"How do I report suspicious activity?",3
+"Can I get help with my password reset?",3
+"What is your emergency contact number?",3
+"I need assistance with my account settings",3
+"Where can I see my saved rental listings?",4
+"How do I sort my favorite properties?",4
+"Can I create different folders for my favorites?",4
+"Why isn't my favorite list updating?",4
+"I want to print my list of favorite properties",4
+"Please call me back regarding my rental application",0
+"I'd like to discuss a potential property",0
+"Can you call me at your earliest convenience?",0
+"Requesting a callback for property ID 9876",0
+"When is a good time for a call back?",0
+"I want to list my property",1
+"How to list a rental?",1
+"Can I post my house?",1
+"I need to update my apartment listing",1
+"Where do I manage my rental?",1
+"How to advertise my property?",1
+"I'm looking for a 2 bedroom apartment",2
+"Find rentals under $1800",2
+"Show me houses for rent",2
+"Are there any rentals that allow pets?",2
+"Filter by unfurnished properties",2
+"I need a place with a balcony",2
+"What's the rent for a 1 bedroom?",2
+"Can I search for industrial properties?",2
+"How to contact support?",3
+"I have an account question",3
+"Is there a number I can call?",3
+"How to report a problem?",3
+"Can I book a viewing?",3
+"What are your hours?",3
+"I need password help",3
+"Where are my favorite properties?",4
+"How to add a property to favorites?",4
+"Can I remove from favorites?",4
+"Why is my favorite not showing?",4
+"I want to share my favorites",4
+"Call me back",0
+"I'd like a call about a property",0
+"Can you call me?",0
+"Callback for ID 123",0
+"When can you call?",0
+"I want to put up my condo for rent",1
+"How do I list my apartment for rent?",1
+"Can I add more details to my listing?",1
+"I need to change the availability date",1
+"Where do I edit my property listing?",1
+"How can I promote my rental?",1
+"I'm searching for a studio apartment",2
+"Find me rentals near the train station",2
+"Show me apartments with a gym",2
+"Are there any short-term rentals?",2
+"Filter by properties with a view",2
+"I need a place with a small yard",2
+"What are the rental prices in this area?",2
+"Can I search for retail spaces?",2
+"How to get assistance?",3
+"I have a question about pricing",3
+"Is there a contact email?",3
+"How do I report a glitch?",3
+"Can I get help finding a property?",3
+"What are your contact numbers?",3
+"I need help logging in",3
+"Where are my saved homes?",4
+"How do I save a property?",4
+"Can I delete properties from my favorites?",4
+"Why isn't this showing in my saved list?",4
+"I want to send my favorite listings to someone",4
+"Please call me back about my interest",0
+"I'd like someone to reach out",0
+"Can you phone me back?",0
+"Request a call for property X",0
+"When can you call me?",0
+"I want to list my garage for rent",1
+"How do I post my rental?",1
+"Can I modify my listing?",1
+"I need to update my rental price",1
+"Where do I see my listed properties?",1
+"How to make my rental more visible?",1
+"I'm looking for a pet-friendly apartment",2
+"Find me rentals with a big kitchen",2
+"Show me houses with a fenced yard",2
+"Are there any properties under $1000?",2
+"Filter results by area",2
+"I need a rental with a separate dining room",2
+"What's the cost of a three-bedroom apartment?",2
+"Can I search for office spaces?",2
+"How do I speak to someone?",3
+"I have a general query",3
+"Is there customer service chat?",3
+"How to report bad behavior?",3
+"Can I schedule a call with an agent?",3
+"What are the support hours?",3
+"I forgot my account details",3
+"Where is my wishlist?",4
+"How do I move properties to my favorites?",4
+"Can I un-favorite a property?",4
+"Why isn't my favorite list full?",4
+"I want to download my favorite list",4
+"Call me please",0
+"I'd like a representative to call me",0
+"Can you ring me?",0
+"Callback for listing 1234",0
+"When can I expect a phone call?",0
+"I want to list a room in my house",1
+"How do I list a property for rent?",1
+"Can I add video of my property?",1
+"I need to edit my apartment details",1
+"Where do I manage my rental listings?",1
+"How to advertise my vacant unit?",1
+"I'm looking for a place with two bathrooms",2
+"Find me rentals near a specific subway line",2
+"Show me apartments with a balcony",2
+"Are there any available short-term rentals?",2
+"Filter by properties with a shared pool",2
+"I need a rental near a university",2
+"What are the average rents in this neighborhood?",2
+"Can I search for land for rent?",2
+"How do I contact the admin?",3
+"I have a general question",3
+"Is there a help desk?",3
+"How do I submit a bug report?",3
+"Can I talk to someone about my account?",3
+"What's your support phone number?",3
+"I need to reset my password",3
+"Where can I find my bookmarked properties?",4
+"How do I delete properties from my saved list?",4
+"Can I label my favorite properties?",4
+"Why are my saved properties not syncing?",4
+"I want to email my favorite list",4
+"Please call me back about a new property",0
+"I'd like to get a call about my application",0
+"Can you call me back to clarify?",0
+"Request a call regarding an issue",0
+"When is a good time for a call?",0
+"I want to list my commercial property",1
+"How do I post a commercial rental?",1
+"Can I upload documents for my commercial listing?",1
+"I need to change my commercial property availability",1
+"Where do I manage my commercial listings?",1
+"How to advertise my commercial space?",1
+"I'm looking for a retail space for rent",2
+"Find me commercial properties with good visibility",2
+"Show me industrial units for rent",2
+"Are there any commercial properties with ample parking?",2
+"Filter results by commercial zoning",2
+"I need a commercial space with high ceilings",2
+"What's the typical rent for a small office?",2
+"Can I search for restaurant spaces?",2
+"How do I contact your commercial team?",3
+"I have a question about commercial listings",3
+"Is there a direct line for commercial inquiries?",3
+"How do I report a problem with a commercial listing?",3
+"Can I schedule a viewing for a commercial space?",3
+"What are your commercial support hours?",3
+"I forgot my commercial login",3
+"Where can I see my saved commercial properties?",4
+"How do I add a commercial property to my favorites list?",4
+"Can I remove a commercial listing from my saved items?",4
+"Why isn't this commercial property in my favorites?",4
+"I want to share my commercial favorites",4
+"Please call me back about my commercial property",0
+"I'd like a call about a commercial rental",0
+"Can you call me back regarding a commercial listing?",0
+"Requesting a callback for commercial property ID 56789",0
+"When can your commercial team call me?",0
+"I want to post a shop for rent",1
+"My company needs to list an office space",1
+"What's the process for posting a commercial unit?",1
+"Looking for commercial rentals in the main street",2
+"Show me commercial properties with a large storefront",2
+"I need to find a flexible commercial lease",2
+"Do you have commercial support?",3
+"Who can I speak to about commercial rentals?",3
+"Where are my preferred commercial properties?",4
+"My commercial favorites are gone",4
+"Can you ring me back about commercial property?",0
+"Please arrange a commercial callback for me",0
+"I want to rent out my commercial building",1
+"Put my commercial space on your site",1
+"I'm searching for commercial properties available for immediate move-in",2
+"Find me affordable commercial spaces",2
+"Can I speak to a commercial agent?",3
+"I need to talk to someone about commercial property",3
+"My saved commercial properties are missing",4
+"Where did my starred commercial listings go?",4
+"Give me a call about commercial properties soon",0
+"Connect me with a commercial property expert",0

@@ -11,6 +11,7 @@ const tablesRoutes = require("./routes/tablesRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const NotificationService = require("./utils/notificationService");
 const sendScheduledNotifications = require("./utils/cronjob");
+const { predict, handleCallback } = require("./utils/chatbot");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -53,6 +54,32 @@ const notificationService = new NotificationService(io, onlineUsers);
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.json());
+
+// Chatbot API endpoints
+app.post('/api/chatbot/classify', (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        const result = predict(message);
+        res.json(result);
+    } catch (error) {
+        console.error('Error processing request:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/chatbot/callback', (req, res) => {
+    try {
+        const result = handleCallback(req.body);
+        res.json(result);
+    } catch (error) {
+        console.error('Error processing callback request:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
 
 // Use consistent namespace: /api/notifications (matches NotificationService)
 const notificationNamespace = io.of("/api/notifications");

@@ -76,15 +76,7 @@ const footerSections = [
     ),
   },
   // {
-  //   id: "privacy-policy",
-  //   label: "Privacy Policy",
-  //   content: <p className="text-center">Privacy policy details Coming Soon</p>,
-  // },
-  // {
-  //   id: "faqs",
-  //   label: "FAQs",
-  //   content: <p className="text-center">Frequently Asked Questions Coming Soon</p>,
-  // },
+  
 ];
 
 const FooterPage = () => {
@@ -98,9 +90,9 @@ const FooterPage = () => {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto p-6 pt-0.5">
+      <div className="container mx-auto p-6 pt-2">
         {/* Tabs for Footer Sections */}
-        <div className="fixed top-0 left-0 w-full mt-14 bg-white border-b mb-4">
+        <div className="fixed top-0 left-0 w-full mt-[70px] lg:mt-20 bg-white border-b mb-4">
           <div className="flex justify-center overflow-x-auto scrollbar-hide">
             <div className="grid grid-cols-4 sm:grid-cols-2 md:flex space-x-1 px-2 py-1 md:py-2 flex-wrap">
               {footerSections.map((item) => (

@@ -2397,7 +2397,7 @@ class UserController extends BaseController {
     try {
       const result = await this.dbService.getRecordsByFields(
         "st_enquirer_category",
-        "id, usertype",
+        "id, category",
         1
       );
       return res.status(201).json({

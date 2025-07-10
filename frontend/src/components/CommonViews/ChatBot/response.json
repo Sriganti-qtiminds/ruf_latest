@@ -1,0 +1,43 @@
+{
+  "intents": [
+    {
+      "intent_id": 1,
+      "title": "📌 Details for Posting a Property",
+      "steps": [
+        "Complete Signup/Login Process",
+        "Click on [Post Property Free] Button",
+        "Fill All Mandatory fields and Click On [Submit] Button",
+        "Property Posting is Successful, Will be Visible After Approvals"
+      ],
+      "link": "https://www.rufrent.com/property/rent/postProperties",
+      "button_text": "Property Posting Process" 
+    },
+    {
+      "intent_id": 2,
+      "title": "🔍 Details for Searching Property",
+      "steps": [
+        "Thanks  you,We have got a curated list of properties based on your preference(s)",        
+        "Please click on [Check Out Properties] Button to check them out!!!",
+        "Once a property is shortlisted, click on [Request a Callback] Button.",
+        "Our Relationship manager will get in touch with you to provide further assistance"
+      ],
+      "link": "https://www.rufrent.com/user",
+      "button_text": "Explore More Properties" 
+    },
+    {
+      "intent_id": 3,
+      "title": "📞 Contact Us",
+      "link": "https://www.rufrent.com/footer/contact-us",
+       "button_text": "Connect With Us" 
+    },
+    {
+      "intent_id": 4,
+      "title": "📌 Favorites Details",
+      "steps": [
+        "Find Favourite Properties"
+      ],
+      "link": "https://www.rufrent.com/property/rent/myfavorites",
+      "button_text": "My Favourities" 
+    }
+  ]
+} 

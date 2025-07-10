@@ -66,8 +66,9 @@ const AuthModal = ({ isOpen, onClose, triggerBy = "/" }) => {
   useEffect(() => {
     async function fetchCountries() {
       try {
-        const response = await axios.get("https://restcountries.com/v3.1/all");
-        const data = response.data.map((country) => ({
+        const { data: countries } = await axios.get("https://restcountries.com/v3.1/all?fields=name,cca2,flags,idd");
+
+        const data = countries.map((country) => ({
           name: country.name.common,
           code: country.idd?.root + (country.idd?.suffixes?.[0] || ""),
           flag: country.flags?.png || "",
@@ -76,12 +77,14 @@ const AuthModal = ({ isOpen, onClose, triggerBy = "/" }) => {
         const india = data.find((country) => country.name === "India");
         if (india) setSelectedCountry(india);
       } catch (error) {
-        setMessage("Failed to load country data.");
-        setMessageType("error");
+        setMessage("Failed to load country data.",error);
+        setMessageType(error);
       }
     }
     fetchCountries();
   }, []);
+
+  
 
   useEffect(() => {
     const handleClickOutside = (event) => {
