@@ -1,0 +1,176 @@
+{
+    "requests": [
+      
+        {
+        "id": 1,
+        "Name": "John Doe",
+        "Mobile_No": "123-456-7890",
+        "Req_Doc_Path": "",
+        "Status": "Pending"
+      },
+      {
+        "id": 2,
+        "Name": "Jane Smith",
+        "Mobile_No": "987-654-3210",
+        "Req_Doc_Path": "/documents/jane_smith_request.pdf",
+        "Status": "Approved"
+      },
+      {
+        "id": 3,
+        "Name": "Alice Johnson",
+        "Mobile_No": "555-123-4567",
+        "Req_Doc_Path": "/documents/alice_johnson_request.pdf",
+        "Status": "Rejected"
+      },
+      {
+        "id": 4,
+        "Name": "Bob Brown",
+        "Mobile_No": "444-987-6543",
+        "Req_Doc_Path": "/documents/bob_brown_request.pdf",
+        "Status": "In Review"
+      },
+      {
+        "id": 5,
+        "Name": "Charlie Davis",
+        "Mobile_No": "222-333-4444",
+        "Req_Doc_Path": "/documents/charlie_davis_request.pdf",
+        "Status": "Completed"
+      }
+    ],
+    "users": [
+      {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com",
+        "type": "vendor",
+        "category": "carpenter",
+        "status": "active"
+      },
+      {
+        "id": 2,
+        "name": "Jane Smith",
+        "email": "jane@example.com",
+        "type": "customer",
+        "category": "customer",
+        "status": "active"
+      },
+      {
+        "id": 3,
+        "name": "Mike Brown",
+        "email": "mike@example.com",
+        "type": "site_manager",
+        "category": null,
+        "status": "active"
+      },
+      {
+        "id": 4,
+        "name": "Sarah Lee",
+        "email": "sarah@example.com",
+        "type": "vendor",
+        "category": "electrician",
+        "status": "active"
+      }
+    ],
+    "projects": [
+      {
+        "id": 1,
+        "name": "Living Room Design",
+        "userId": 2,
+        "siteManagerId": 3,
+        "nweeks": 4,
+        "total_cost": 5000.0,
+        "status": "active"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 1,
+        "projectId": 1,
+        "name": "Furniture Installation",
+        "vendorId": 1,
+        "category": "carpenter",
+        "week_id": 1,
+        "completed_percent": 50,
+        "images_before": "https://example.com/before1.jpg",
+        "images_after": "",
+        "status": "active"
+      },
+      {
+        "id": 2,
+        "projectId": 1,
+        "name": "Wiring Setup",
+        "vendorId": 4,
+        "category": "electrician",
+        "week_id": 2,
+        "completed_percent": 20,
+        "images_before": "",
+        "images_after": "",
+        "status": "active"
+      }
+    ],
+    "vendorCategories": [
+      "carpenter",
+      "electrician",
+      "plumber",
+      "painter"
+    ],
+    "rooms": [
+      {
+        "id": 1,
+        "area_type": "Living Room",
+        "budget_type": "Elegant",
+        "image_count": 5,
+        "room_desc": "Spacious living area with modern decor.",
+        "images": []
+      },
+      {
+        "id": 2,
+        "area_type": "Master Bedroom",
+        "budget_type": "Luxury",
+        "image_count": 3,
+        "room_desc": "Luxurious bedroom with premium fittings.",
+        "images": []
+      }
+    ],
+    "testimonials": [
+      {
+        "id": 1,
+        "userId": 2,
+        "display_name": "Jane S.",
+        "rating": 5,
+        "review": "Amazing service!",
+        "city": "New York",
+        "builder": "ABC Builders",
+        "community": "Green Valley",
+        "date": "2025-01-15",
+        "image": "https://example.com/testimonial1.jpg",
+        "status": "approve"
+      },
+      {
+        "id": 2,
+        "userId": 2,
+        "display_name": "Jane S.",
+        "rating": 4,
+        "review": "Great work, minor delays.",
+        "city": "Boston",
+        "builder": "XYZ Builders",
+        "community": "Blue Hills",
+        "date": "2025-02-10",
+        "image": "",
+        "status": "reject"
+      }
+    ],
+    "config": {
+      "theme": {
+        "colors": {
+          "primary": "#1A1F3D",
+          "secondary": "#E07A5F",
+          "accent": "#7C9A92"
+        },
+        "darkMode": "class"
+      },
+      "s3": {
+        "baseUrl": "https://rufrents3.s3.ap-south-1.amazonaws.com/studio"
+      }
+    }
+  }

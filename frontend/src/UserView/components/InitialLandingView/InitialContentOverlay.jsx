@@ -10,9 +10,9 @@ import tailwindStyles from "../../../utils/tailwindStyles";
 import Dropdown from "./hooks/dropdown";
 
 import "../../styles/animations.css";
-import CompactCallbackForm from "./Reqcallback";
+import CompactCallbackForm from "./reqcallback";
 import TabNavigation from "../../../components/CommonViews/TabNavigation";
-
+import { RENTALS_BASE } from "../../../routes/routesPath";
 const ContentOverlay = () => {
   const navigate = useNavigate();
   const [searchClicked, setSearchClicked] = useState(false);
@@ -85,7 +85,7 @@ const ContentOverlay = () => {
     if (availability.length > 0)
       queryParams.append("availability", availability[0]);
 
-    navigate(`/property/rent?${queryParams.toString()}`);
+    navigate(`${RENTALS_BASE}?${queryParams.toString()}`);
   };
 
   return (

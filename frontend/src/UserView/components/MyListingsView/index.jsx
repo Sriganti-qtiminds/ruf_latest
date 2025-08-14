@@ -82,7 +82,7 @@ const MyListingsView = () => {
     useUserListingsStore();
   const jwtToken = Cookies.get(jwtSecretKey);
   const userId = userData.id;
-
+console.log("userlistdings", fetchUserListings)
   useEffect(() => {
     // Check if jwtToken is defined
     if (jwtToken === undefined) {

@@ -32,6 +32,7 @@ export function FilterBar({ onFilterChange }) {
           (await fetchCities()).data,
           (await fetchStatusOptions()).data,
         ]);
+        
 
         setCities(citiesData.result || []);
         setStatusOptions(statusData.result || []);
@@ -52,7 +53,7 @@ export function FilterBar({ onFilterChange }) {
 
   useEffect(() => {
     const loadBuilders = async () => {
-      if (filters.city === "All City") return; // ✅ Prevent API call if city is not selected
+      if (filters.city === "All City") return; 
   
       try {
         setLoading(true);

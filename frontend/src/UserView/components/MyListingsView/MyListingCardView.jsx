@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { RENTALS_BASE } from "../../../routes/routesPath";
 import {
   MapPin,
   IndianRupee,
@@ -152,7 +153,7 @@ const MyListingCardView = ({ property, timeText }) => {
 
   const handleEdit = () => {
     setSelectedProperty(property); // Set the property in the store
-    navigate("/property/rent/postProperties"); // Navigate to the edit page
+    navigate(`${RENTALS_BASE}/postProperties`); // Navigate to the edit page
   };
 
   return (

@@ -11,28 +11,28 @@ const timeline = {
       title: "Initial Consultation",
       description:
         "We meet to discuss your vision, preferences, and budget to create a personalized design plan.",
-      image: "Studio/DP_img_1.jpg",
+      image: "/Studio/DP_img_1.jpg",
     },
     {
       week: "Week 2-3",
       title: "Concept Development",
       description:
         "Our team crafts detailed design concepts, including mood boards and 3D renderings, for your approval.",
-      image: "Studio/DP_img_2.jpg",
+      image: "/Studio/DP_img_2.jpg",
     },
     {
       week: "Week 4-5",
       title: "Material Selection",
       description:
         "We source high-quality materials and furnishings that align with your style and budget.",
-      image: "Studio/DP_img_3.jpg",
+      image: "/Studio/DP_img_3.jpg",
     },
     {
       week: "Week 6-8",
       title: "Implementation",
       description:
         "Our skilled team brings the design to life, ensuring every detail is executed to perfection.",
-      image: "Studio/DP_img_4.jpg",
+      image: "/Studio/DP_img_4.jpg",
     },
   ],
 };

@@ -1,4 +1,4 @@
-const DatabaseService = require("../utils/service");
+const {DatabaseService,DatabaseServicestudio} = require("../utils/service");
 const db = require("../config/db");
 const TransactionController = require("../utils/transaction");
 

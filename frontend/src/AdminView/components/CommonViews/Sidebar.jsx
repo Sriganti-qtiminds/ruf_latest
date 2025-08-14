@@ -15,12 +15,12 @@ import {
 
 const Sidebar = () => {
   const navItems = [
-    {
-      path: "/admin",
-      icon: <LayoutDashboard size={20} />,
-      label: "Dashboard",
-      exact: true, // To ensure it's exact for the dashboard link
-    },
+    // {
+    //   path: "/admin",
+    //   icon: <LayoutDashboard size={20} />,
+    //   label: "Dashboard",
+    //   exact: true, // To ensure it's exact for the dashboard link
+    // },
     {
       path: "properties",
       icon: <Home size={20} />,

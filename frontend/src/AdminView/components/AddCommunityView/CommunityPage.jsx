@@ -1,8 +1,20 @@
-"use client";
+
 
 import { useState, useEffect, useRef } from "react";
-
-const apiUrl = `${import.meta.env.VITE_API_URL}`;
+import {
+  fetchCities,
+  fetchAllCommunities,
+  fetchBuilders,
+  fetchCommunities,
+  fetchAmenityCategories,
+  fetchAmenities,
+  fetchLandmarkCategories,
+  createCommunity,
+  addAmenities,
+  addLandmarks,
+  importAmenities,
+  importLandmarks,
+} from "../../../services/adminapiservices";
 
 const Communities = () => {
   // Common states
@@ -85,214 +97,144 @@ const Communities = () => {
 
   // Fetch cities (common for all forms)
   useEffect(() => {
-    fetch(
-      `${apiUrl}/getRecords?tableName=st_city&fieldNames=id,name&whereCondition=rstatus=1`
-    )
-      .then((response) => response.json())
-      .then((data) => setCities(data.result || []))
-      .catch((error) => console.error("Error fetching cities:", error));
+    const getCities = async () => {
+      const data = await fetchCities();
+      console.log("fetchCities data:", data);
+      setCities(data.data.result);
+    };
+    getCities();
   }, []);
 
-  // Fetch all communities for target dropdown
+  // Fetch all communities for import forms
   useEffect(() => {
-    fetch(
-      `${apiUrl}/getRecords?tableName=st_community&fieldNames=id,name&whereCondition=rstatus=1`
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        setAllCommunities(data.result || []);
-      })
-      .catch((error) =>
-        console.error("Error fetching all communities:", error)
-      );
+    const getAllCommunities = async () => {
+      const data = await fetchAllCommunities();
+      console.log("fetchAllCommunities data:", data);
+      setAllCommunities(data.data.result);
+    };
+    getAllCommunities();
   }, []);
 
   // ===== COMMUNITY FORM EFFECTS =====
 
   // Fetch builders based on selected city for Community form
   useEffect(() => {
-    if (communityCity) {
-      fetch(
-        `${apiUrl}/getRecords?tableName=st_builder&fieldNames=id,name&whereCondition=rstatus=1 AND city_id=${communityCity}`
-      )
-        .then((response) => response.json())
-        .then((data) => setCommunityBuilders(data.result || []))
-        .catch((error) =>
-          console.error("Error fetching builders for community form:", error)
-        );
-    } else {
-      setCommunityBuilders([]);
+    const getBuilders = async () => {
+      console.log("Fetching builders for communityCity:", communityCity);
+      const data = await fetchBuilders(communityCity);
+      console.log("fetchBuilders data:", data);
+      setCommunityBuilders(data.data.result);
       setCommunityBuilder("");
-    }
+    };
+    getBuilders();
   }, [communityCity]);
 
   // ===== AMENITY FORM EFFECTS =====
 
   // Fetch builders based on selected city for Amenity form
   useEffect(() => {
-    if (amenityCity) {
-      fetch(
-        `${apiUrl}/getRecords?tableName=st_builder&fieldNames=id,name&whereCondition=rstatus=1 AND city_id=${amenityCity}`
-      )
-        .then((response) => response.json())
-        .then((data) => setAmenityBuilders(data.result || []))
-        .catch((error) =>
-          console.error("Error fetching builders for amenity form:", error)
-        );
-    } else {
-      setAmenityBuilders([]);
+    const getBuilders = async () => {
+      console.log("Fetching builders for amenityCity:", amenityCity);
+      const data = await fetchBuilders(amenityCity);
+      console.log("fetchBuilders data for amenity:", data);
+      setAmenityBuilders(data.data.result);
       setAmenityBuilder("");
-    }
+    };
+    getBuilders();
   }, [amenityCity]);
 
   // Fetch communities based on selected builder for Amenity form
   useEffect(() => {
-    if (amenityBuilder) {
-      fetch(
-        `${apiUrl}/getRecords?tableName=st_community&fieldNames=id,name&whereCondition=rstatus=1 AND builder_id=${amenityBuilder}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          setAmenityCommunities(data.result || []);
-          setSelectedCommunityForAmenity("");
-        })
-        .catch((error) =>
-          console.error("Error fetching communities for amenity form:", error)
-        );
-    } else {
-      setAmenityCommunities([]);
+    const getCommunities = async () => {
+      console.log("Fetching communities for amenityBuilder:", amenityBuilder);
+      const data = await fetchCommunities(amenityBuilder);
+      console.log("fetchCommunities data for amenity:", data);
+      setAmenityCommunities(data.data.result);
       setSelectedCommunityForAmenity("");
-    }
+    };
+    getCommunities();
   }, [amenityBuilder]);
 
   // Fetch amenity categories
   useEffect(() => {
-    fetch(
-      `${apiUrl}/getRecords?tableName=st_amenity_category&fieldNames=id,amenity_category&whereCondition=rstatus=1`
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        setAmenitiesCategories(data.result || []);
-      })
-      .catch((error) =>
-        console.error("Error fetching amenity categories:", error)
-      );
+    const getAmenityCategories = async () => {
+      const data = await fetchAmenityCategories();
+      console.log("fetchAmenityCategories data:", data);
+      setAmenitiesCategories(Array.isArray(data) ? data : []);
+    };
+    getAmenityCategories();
   }, []);
 
   // Fetch amenities based on selected category
   useEffect(() => {
-    if (selectedCommunityForAmenity && selectedAmenityCategory) {
-      const encodedWhereCondition = encodeURIComponent(
-        `rstatus=1 AND amenity_category_id=${selectedAmenityCategory}`
-      );
-
-      fetch(
-        `${apiUrl}/getRecords?tableName=st_amenities&fieldNames=id,amenity_name&whereCondition=${encodedWhereCondition}`
-      )
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setAmenities(data.result || []);
-        })
-        .catch((error) => {
-          console.error("Error fetching amenities:", error);
-        });
-    } else {
-      setAmenities([]);
-    }
+    const getAmenities = async () => {
+      console.log("Fetching amenities for community:", selectedCommunityForAmenity, "category:", selectedAmenityCategory);
+      const data = await fetchAmenities(selectedCommunityForAmenity, selectedAmenityCategory);
+      console.log("fetchAmenities data:", data);
+      setAmenities(Array.isArray(data) ? data : []);
+    };
+    getAmenities();
   }, [selectedCommunityForAmenity, selectedAmenityCategory]);
 
   // Fetch builders for target community
   useEffect(() => {
-    if (targetCity) {
-      fetch(
-        `${apiUrl}/getRecords?tableName=st_builder&fieldNames=id,name&whereCondition=rstatus=1 AND city_id=${targetCity}`
-      )
-        .then((response) => response.json())
-        .then((data) => setTargetBuilders(data.result || []))
-        .catch((error) =>
-          console.error("Error fetching target builders:", error)
-        );
-    } else {
-      setTargetBuilders([]);
+    const getBuilders = async () => {
+      console.log("Fetching builders for targetCity:", targetCity);
+      const data = await fetchBuilders(targetCity);
+      console.log("fetchBuilders data for target:", data);
+      setTargetBuilders(data.data.result);
       setTargetBuilder("");
       setTargetCommunities([]);
-    }
+    };
+    getBuilders();
   }, [targetCity]);
 
   // Fetch communities based on selected builder for Target community
   useEffect(() => {
-    if (targetBuilder) {
-      fetch(
-        `${apiUrl}/getRecords?tableName=st_community&fieldNames=id,name&whereCondition=rstatus=1 AND builder_id=${targetBuilder}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          setTargetCommunities(data.result || []);
-          setTargetCommunityId(""); // Reset target community when builder changes
-        })
-        .catch((error) =>
-          console.error("Error fetching target communities:", error)
-        );
-    } else {
-      setTargetCommunities([]);
+    const getCommunities = async () => {
+      console.log("Fetching communities for targetBuilder:", targetBuilder);
+      const data = await fetchCommunities(targetBuilder);
+      console.log("fetchCommunities data for target:", data);
+      setTargetCommunities(data.data.result);
       setTargetCommunityId("");
-    }
+    };
+    getCommunities();
   }, [targetBuilder]);
 
   // ===== LANDMARK FORM EFFECTS =====
 
   // Fetch builders based on selected city for Landmark form
   useEffect(() => {
-    if (landmarkCity) {
-      fetch(
-        `${apiUrl}/getRecords?tableName=st_builder&fieldNames=id,name&whereCondition=rstatus=1 AND city_id=${landmarkCity}`
-      )
-        .then((response) => response.json())
-        .then((data) => setLandmarkBuilders(data.result || []))
-        .catch((error) =>
-          console.error("Error fetching builders for landmark form:", error)
-        );
-    } else {
-      setLandmarkBuilders([]);
+    const getBuilders = async () => {
+      console.log("Fetching builders for landmarkCity:", landmarkCity);
+      const data = await fetchBuilders(landmarkCity);
+      console.log("fetchBuilders data for landmark:", data);
+      setLandmarkBuilders(data.data.result);
       setLandmarkBuilder("");
-    }
+    };
+    getBuilders();
   }, [landmarkCity]);
 
   // Fetch communities based on selected builder for Landmark form
   useEffect(() => {
-    if (landmarkBuilder) {
-      fetch(
-        `${apiUrl}/getRecords?tableName=st_community&fieldNames=id,name&whereCondition=rstatus=1 AND builder_id=${landmarkBuilder}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          setLandmarkCommunities(data.result || []);
-          setSelectedCommunityForLandmark("");
-        })
-        .catch((error) =>
-          console.error("Error fetching communities for landmark form:", error)
-        );
-    } else {
-      setLandmarkCommunities([]);
+    const getCommunities = async () => {
+      console.log("Fetching communities for landmarkBuilder:", landmarkBuilder);
+      const data = await fetchCommunities(landmarkBuilder);
+      console.log("fetchCommunities data for landmark:", data);
+      setLandmarkCommunities(data.data.result);
       setSelectedCommunityForLandmark("");
-    }
+    };
+    getCommunities();
   }, [landmarkBuilder]);
 
   // Fetch landmark categories
   useEffect(() => {
-    fetch(
-      `${apiUrl}/getRecords?tableName=st_landmarks_category&fieldNames=id,landmark_category&whereCondition=rstatus=1`
-    )
-      .then((response) => response.json())
-      .then((data) => setLandmarkCategories(data.result || []))
-      .catch((error) =>
-        console.error("Error fetching landmark categories:", error)
-      );
+    const getLandmarkCategories = async () => {
+      const data = await fetchLandmarkCategories();
+      console.log("fetchLandmarkCategories data:", data);
+      setLandmarkCategories(Array.isArray(data) ? data : []);
+    };
+    getLandmarkCategories();
   }, []);
 
   // --- Handlers ---
@@ -311,7 +253,7 @@ const Communities = () => {
     );
   };
 
-  const handleSaveAmenities = () => {
+  const handleSaveAmenities = async () => {
     if (selectedAmenities.length === 0) {
       alert("Please select at least one amenity.");
       return;
@@ -320,23 +262,16 @@ const Communities = () => {
       community_id: Number.parseInt(selectedCommunityForAmenity, 10),
       amenity_ids: selectedAmenities.map(Number),
     };
-    fetch(`${apiUrl}/addamenities`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.message && data.message.includes("successfully")) {
-          alert(data.message);
-        } else {
-          alert("Failed to save amenities.");
-        }
-      })
-      .catch((error) => {
-        console.error("Error saving amenities:", error);
-        alert("An error occurred while saving the amenities.");
-      });
+    try {
+      const data = await addAmenities(payload);
+      if (data.message && data.message.includes("successfully")) {
+        alert(data.message);
+      } else {
+        alert("Failed to save amenities.");
+      }
+    } catch (error) {
+      alert("An error occurred while saving the amenities.");
+    }
   };
 
   const handleAddLandmark = () => {
@@ -349,7 +284,7 @@ const Communities = () => {
     setLandmarks(newLandmarks);
   };
 
-  const handleSaveLandmarks = () => {
+  const handleSaveLandmarks = async () => {
     const payload = {
       community_id: Number.parseInt(selectedCommunityForLandmark, 10),
       landmarks: landmarks.map((landmark) => ({
@@ -358,26 +293,19 @@ const Communities = () => {
         landmark_category_id: Number.parseInt(landmark.category, 10),
       })),
     };
-    fetch(`${apiUrl}/landmarks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.message && data.message.includes("successfully")) {
-          alert("landmark saved successfully");
-        } else {
-          alert("Failed to save landmarks.");
-        }
-      })
-      .catch((error) => {
-        console.error("Error saving landmarks:", error);
-        alert("An error occurred while saving landmarks.");
-      });
+    try {
+      const data = await addLandmarks(payload);
+      if (data.message && data.message.includes("successfully")) {
+        alert("Landmark saved successfully");
+      } else {
+        alert("Failed to save landmarks.");
+      }
+    } catch (error) {
+      alert("An error occurred while saving landmarks.");
+    }
   };
 
-  const handleSaveCommunity = () => {
+  const handleSaveCommunity = async () => {
     // Validate all required fields
     if (!nameCommunity?.trim()) {
       alert("Please enter a community name.");
@@ -431,7 +359,7 @@ const Communities = () => {
     // Build the communityData object
     const communityData = {
       name: nameCommunity.trim(),
-      map_url: mapUrl?.trim() || "", // Default empty string if missing
+      map_url: mapUrl?.trim() || "",
       total_area: Number(totalArea),
       open_area: Number(openArea),
       nblocks: Number(nblocks),
@@ -447,37 +375,16 @@ const Communities = () => {
 
     console.log("Sending communityData:", JSON.stringify(communityData));
 
-    // Create FormData
-    const formData = new FormData();
-    formData.append("communityData", JSON.stringify(communityData));
-
-    if (images) {
-      formData.append("images", images);
+    try {
+      const data = await createCommunity(communityData, images);
+      if (data.message && data.message.includes("successfully")) {
+        alert("Community added successfully!");
+      } else {
+        alert("Failed to add community.");
+      }
+    } catch (error) {
+      alert("An error occurred while adding the community.");
     }
-
-    fetch(`${apiUrl}/createCommunity`, {
-      method: "POST",
-      body: formData,
-    })
-      .then((response) => {
-        if (!response.ok) {
-          return response.text().then((text) => {
-            throw new Error(text);
-          });
-        }
-        return response.json();
-      })
-      .then((data) => {
-        if (data.message && data.message.includes("successfully")) {
-          alert("Community added successfully!");
-        } else {
-          alert("Failed to add community.");
-        }
-      })
-      .catch((error) => {
-        console.error("Error adding community:", error);
-        alert("An error occurred while adding the community.");
-      });
   };
 
   const handleImportAmenities = async () => {
@@ -487,20 +394,13 @@ const Communities = () => {
     }
 
     try {
-      const response = await fetch(
-        `${apiUrl}/importamenities?source_community_id=${sourceCommunityId}&target_community_id=${targetCommunityId}`,
-        {
-          method: "POST",
-        }
-      );
-      const data = await response.json();
+      const data = await importAmenities(sourceCommunityId, targetCommunityId);
       if (data.message && data.message.includes("completed")) {
         alert("Amenities imported successfully!");
       } else {
         alert("Failed to import amenities.");
       }
     } catch (error) {
-      console.error("Error importing amenities:", error);
       alert("An error occurred while importing amenities.");
     }
   };
@@ -512,20 +412,13 @@ const Communities = () => {
     }
 
     try {
-      const response = await fetch(
-        `${apiUrl}/importLandmarks?source_community_id=${sourceCommunityId}&target_community_id=${targetCommunityId}`,
-        {
-          method: "POST",
-        }
-      );
-      const data = await response.json();
+      const data = await importLandmarks(sourceCommunityId, targetCommunityId);
       if (data.message && data.message.includes("completed")) {
         alert("Landmarks imported successfully!");
       } else {
         alert("Failed to import landmarks.");
       }
     } catch (error) {
-      console.error("Error importing landmarks:", error);
       alert("An error occurred while importing landmarks.");
     }
   };
@@ -624,11 +517,15 @@ const Communities = () => {
                 className="mt-2 block w-full border px-3 py-2 rounded-md"
               >
                 <option value="">Select a builder</option>
-                {communityBuilders.map((builder) => (
-                  <option key={builder.id} value={builder.id}>
-                    {builder.name}
-                  </option>
-                ))}
+                {Array.isArray(communityBuilders) ? (
+                  communityBuilders.map((builder) => (
+                    <option key={builder.id} value={builder.id}>
+                      {builder.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No builders available</option>
+                )}
               </select>
             </div>
           </div>
@@ -710,7 +607,7 @@ const Communities = () => {
               onChange={(e) => setStatus(e.target.value)}
             >
               <option value="">Select Status</option>
-              <option value="active">completed</option>
+              <option value="active">Completed</option>
               <option value="inactive">Ongoing</option>
             </select>
             <input
@@ -776,7 +673,7 @@ const Communities = () => {
           </div>
 
           {!showImportForm ? (
-            // Add Amenities Form (No heading, all in one line)
+            // Add Amenities Form
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
@@ -814,11 +711,15 @@ const Communities = () => {
                     className="mt-2 block w-full border px-3 py-2 rounded-md"
                   >
                     <option value="">Select a builder</option>
-                    {amenityBuilders.map((builder) => (
-                      <option key={builder.id} value={builder.id}>
-                        {builder.name}
-                      </option>
-                    ))}
+                    {Array.isArray(amenityBuilders) ? (
+                      amenityBuilders.map((builder) => (
+                        <option key={builder.id} value={builder.id}>
+                          {builder.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No builders available</option>
+                    )}
                   </select>
                 </div>
                 <div className="flex-1">
@@ -837,11 +738,15 @@ const Communities = () => {
                     className="mt-2 block w-full border px-3 py-2 rounded-md"
                   >
                     <option value="">Select Community</option>
-                    {amenityCommunities.map((community) => (
-                      <option key={community.id} value={community.id}>
-                        {community.name}
-                      </option>
-                    ))}
+                    {Array.isArray(amenityCommunities) ? (
+                      amenityCommunities.map((community) => (
+                        <option key={community.id} value={community.id}>
+                          {community.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No communities available</option>
+                    )}
                   </select>
                 </div>
               </div>
@@ -860,14 +765,18 @@ const Communities = () => {
                   className="mt-2 block w-full border px-3 py-2 rounded-md"
                 >
                   <option value="">Select Amenity Category</option>
-                  {amenitiesCategories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.amenity_category}
-                    </option>
-                  ))}
+                  {Array.isArray(amenitiesCategories) ? (
+                    amenitiesCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.amenity_category}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No categories available</option>
+                  )}
                 </select>
               </div>
-              {selectedAmenityCategory && amenities.length > 0 && (
+              {selectedAmenityCategory && Array.isArray(amenities) && amenities.length > 0 && (
                 <div className="mt-2 grid grid-cols-5 gap-4">
                   {amenities.map((amenity) => (
                     <div key={amenity.id} className="flex items-center gap-2">
@@ -936,11 +845,15 @@ const Communities = () => {
                       className="mt-2 block w-full border px-3 py-2 rounded-md"
                     >
                       <option value="">Select a builder</option>
-                      {amenityBuilders.map((builder) => (
-                        <option key={builder.id} value={builder.id}>
-                          {builder.name}
-                        </option>
-                      ))}
+                      {Array.isArray(amenityBuilders) ? (
+                        amenityBuilders.map((builder) => (
+                          <option key={builder.id} value={builder.id}>
+                            {builder.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>No builders available</option>
+                      )}
                     </select>
                   </div>
                   <div className="flex-1">
@@ -957,11 +870,15 @@ const Communities = () => {
                       className="mt-2 block w-full border px-3 py-2 rounded-md"
                     >
                       <option value="">Select Source Community</option>
-                      {amenityCommunities.map((community) => (
-                        <option key={community.id} value={community.id}>
-                          {community.name}
-                        </option>
-                      ))}
+                      {Array.isArray(amenityCommunities) ? (
+                        amenityCommunities.map((community) => (
+                          <option key={community.id} value={community.id}>
+                            {community.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>No communities available</option>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -1006,11 +923,15 @@ const Communities = () => {
                       className="mt-2 block w-full border px-3 py-2 rounded-md"
                     >
                       <option value="">Select a builder</option>
-                      {targetBuilders.map((builder) => (
-                        <option key={builder.id} value={builder.id}>
-                          {builder.name}
-                        </option>
-                      ))}
+                      {Array.isArray(targetBuilders) ? (
+                        targetBuilders.map((builder) => (
+                          <option key={builder.id} value={builder.id}>
+                            {builder.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>No builders available</option>
+                      )}
                     </select>
                   </div>
                   <div className="flex-1">
@@ -1027,11 +948,15 @@ const Communities = () => {
                       className="mt-2 block w-full border px-3 py-2 rounded-md"
                     >
                       <option value="">Select Target Community</option>
-                      {targetCommunities.map((community) => (
-                        <option key={community.id} value={community.id}>
-                          {community.name}
-                        </option>
-                      ))}
+                      {Array.isArray(targetCommunities) ? (
+                        targetCommunities.map((community) => (
+                          <option key={community.id} value={community.id}>
+                            {community.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>No communities available</option>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -1116,17 +1041,21 @@ const Communities = () => {
                 className="mt-2 block w-full border px-3 py-2 rounded-md"
               >
                 <option value="">Select a builder</option>
-                {landmarkBuilders.map((builder) => (
-                  <option key={builder.id} value={builder.id}>
-                    {builder.name}
-                  </option>
-                ))}
+                {Array.isArray(landmarkBuilders) ? (
+                  landmarkBuilders.map((builder) => (
+                    <option key={builder.id} value={builder.id}>
+                      {builder.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No builders available</option>
+                )}
               </select>
             </div>
           </div>
 
           {!showImportLandmarksForm ? (
-            // Existing add landmarks form code here
+            // Add Landmarks Form
             <>
               {/* Select Community Dropdown for Landmarks */}
               <div className="mb-4">
@@ -1145,11 +1074,15 @@ const Communities = () => {
                   className="mt-2 block w-full border px-3 py-2 rounded-md"
                 >
                   <option value="">Select Community</option>
-                  {landmarkCommunities.map((community) => (
-                    <option key={community.id} value={community.id}>
-                      {community.name}
-                    </option>
-                  ))}
+                  {Array.isArray(landmarkCommunities) ? (
+                    landmarkCommunities.map((community) => (
+                      <option key={community.id} value={community.id}>
+                        {community.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No communities available</option>
+                  )}
                 </select>
               </div>
               {landmarks.map((landmark, index) => (
@@ -1169,14 +1102,14 @@ const Communities = () => {
                     }
                   >
                     <option value="">Select Landmark Category</option>
-                    {landmarkCategories.length === 0 ? (
-                      <option disabled>No landmark categories available</option>
-                    ) : (
+                    {Array.isArray(landmarkCategories) ? (
                       landmarkCategories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.landmark_category}
                         </option>
                       ))
+                    ) : (
+                      <option disabled>No landmark categories available</option>
                     )}
                   </select>
                   <input
@@ -1219,7 +1152,7 @@ const Communities = () => {
               </div>
             </>
           ) : (
-            // Import landmarks form
+            // Import Landmarks Form
             <div className="space-y-4">
               <div>
                 <label className="block font-medium mb-1">
@@ -1231,11 +1164,15 @@ const Communities = () => {
                   className="mt-2 block w-full border px-3 py-2 rounded-md"
                 >
                   <option value="">Select Source Community</option>
-                  {landmarkCommunities.map((community) => (
-                    <option key={community.id} value={community.id}>
-                      {community.name}
-                    </option>
-                  ))}
+                  {Array.isArray(allCommunities) ? (
+                    allCommunities.map((community) => (
+                      <option key={community.id} value={community.id}>
+                        {community.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No communities available</option>
+                  )}
                 </select>
               </div>
               <div>
@@ -1248,11 +1185,15 @@ const Communities = () => {
                   className="mt-2 block w-full border px-3 py-2 rounded-md"
                 >
                   <option value="">Select Target Community</option>
-                  {allCommunities.map((community) => (
-                    <option key={community.id} value={community.id}>
-                      {community.name}
-                    </option>
-                  ))}
+                  {Array.isArray(allCommunities) ? (
+                    allCommunities.map((community) => (
+                      <option key={community.id} value={community.id}>
+                        {community.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No communities available</option>
+                  )}
                 </select>
               </div>
               <div className="flex justify-center mt-6">

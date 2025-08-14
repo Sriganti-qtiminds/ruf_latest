@@ -1,11 +1,13 @@
 
 
+// export default Requests;
+
+
+
 
 import React, { useState, useEffect } from 'react';
 import AdminPanel from './AdminPanel';
-import { fetchCities, fetchBuilders, fetchRecords, fetchCommunities, fetchRmFms, fetchComMapDetails } from './newApiServices';
-import axios from 'axios';
-const apiUrl = `${import.meta.env.VITE_API_URL}`;
+import { fetchCities, fetchBuilders, fetchRecords, fetchCommunities, fetchRmFms, fetchComMapDetails, updateTask } from '../../../services/adminapiservices';
 
 function Requests() {
   const [cities, setCities] = useState([]);
@@ -14,10 +16,10 @@ function Requests() {
   const [selectedBuilder, setSelectedBuilder] = useState("");
   const [communities, setCommunities] = useState([]);
   const [records, setRecords] = useState([]);
-  console.log("rec", records)
+  console.log("rec", records);
   const [status, setStatus] = useState([]);
-  const [rmfm, setRmfm] = useState([]); // Reintroduced for RM/FM filter data
-  const [comMapDetails, setComMapDetails] = useState([]); // For community mapping
+  const [rmfm, setRmfm] = useState([]);
+  const [comMapDetails, setComMapDetails] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -25,16 +27,16 @@ function Requests() {
     totalRecords: 0,
     limit: 10,
   });
-  const [selectedStatus, setSelectedStatus] = useState(""); // For status filter
-  const [selectedRm, setSelectedRm] = useState(""); // For RM filter
-  const [selectedCommunity, setSelectedCommunity] = useState(""); // For community filter
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedRm, setSelectedRm] = useState("");
+  const [selectedCommunity, setSelectedCommunity] = useState("");
 
   // Fetch cities
   useEffect(() => {
     const fetchCitie = async () => {
       try {
         const res = await fetchCities();
-        setCities(res.data.result);
+        setCities(res.data.result || []);
       } catch (error) {
         console.error("Error fetching cities", error);
       }
@@ -51,7 +53,7 @@ function Requests() {
       }
       try {
         const res = await fetchBuilders(selectedCity);
-        setBuilders(res.data.result);
+        setBuilders(res.data.result || []);
       } catch (error) {
         console.error("Error fetching builders:", error);
       }
@@ -68,7 +70,7 @@ function Requests() {
       }
       try {
         const res = await fetchCommunities(selectedBuilder);
-        setCommunities(res.data.result);
+        setCommunities(res.data.result || []);
       } catch (error) {
         console.error("Error fetching communities:", error);
       }
@@ -81,7 +83,9 @@ function Requests() {
     const fetchRmFmData = async () => {
       try {
         const response = await fetchRmFms();
-        setRmfm(response.data.result);
+        console.log("fetchRmFms response:", response.data);
+        setRmfm(response.data.result || []);
+        
       } catch (error) {
         console.error('Error fetching RM/FM:', error);
       }
@@ -89,12 +93,17 @@ function Requests() {
     fetchRmFmData();
   }, []);
 
+  
+  useEffect(() => {
+    
+  }, [rmfm]);
+
   // Fetch community mapping details
   useEffect(() => {
     const fetchComMap = async () => {
       try {
         const response = await fetchComMapDetails();
-        setComMapDetails(response.data.result);
+        setComMapDetails(response.data.result || []);
       } catch (error) {
         console.error('Error fetching community mapping details:', error);
       }
@@ -113,17 +122,24 @@ function Requests() {
         community_id: selectedCommunity,
       };
       const response = await fetchRecords(page, pagination.limit, filters);
-     
-      setRecords(response.data.result);
-      setStatus(response.data.status);
+      setRecords(response.data.result || []);
+      setStatus(response.data.status || []);
       setPagination({
-        currentPage: response.data.pagination.currentPage,
-        totalPages: response.data.pagination.totalPages,
-        totalRecords: response.data.pagination.totalRecords,
-        limit: response.data.pagination.limit,
+        currentPage: response.data.pagination?.currentPage || page,
+        totalPages: response.data.pagination?.totalPages || 1,
+        totalRecords: response.data.pagination?.totalRecords || 0,
+        limit: response.data.pagination?.limit || pagination.limit,
       });
     } catch (error) {
       console.error('Error fetching Records:', error);
+      setRecords([]);
+      setStatus([]);
+      setPagination(prev => ({
+        ...prev,
+        currentPage: page,
+        totalPages: 1,
+        totalRecords: 0,
+      }));
     } finally {
       setRequestsLoading(false);
     }
@@ -131,7 +147,7 @@ function Requests() {
 
   useEffect(() => {
     fetchRecordData(pagination.currentPage);
-  }, [pagination.currentPage,selectedStatus, selectedRm, selectedBuilder, selectedCommunity]);
+  }, [pagination.currentPage, selectedStatus, selectedRm, selectedBuilder, selectedCommunity]);
 
   // Update record
   const onUpdateRecord = async (recordId, updateRecords) => {
@@ -147,8 +163,7 @@ function Requests() {
         payload.Inv_Amount = parseFloat(updateRecords.Inv_Amount);
       }
 
-      const response = await axios.put(`${apiUrl}/updateTask`, payload);
-     
+      const response = await updateTask(payload);
 
       if (response.data.message === "Invoice already exists for this Tenant and Property.") {
         alert(`Invoice already exists for Tenant_ID: ${response.data.existingInvoice.Tenant_ID} and Property_ID: ${response.data.existingInvoice.Property_ID}`);
@@ -173,8 +188,28 @@ function Requests() {
     setPagination((prev) => ({ ...prev, currentPage: page }));
   };
 
+  // Temporary RM/FM dropdown for debugging
+  const handleRmChange = (event) => {
+    setSelectedRm(event.target.value);
+    console.log("selectedRm:", event.target.value);
+  };
+
   return (
     <div className="bg-white h-[calc(100vh-110px)] rounded-lg shadow m-5">
+      {/* Temporary RM/FM Dropdown */}
+      <div className="p-4">
+       
+        <select
+          id="rmfm-select"
+          value={selectedRm}
+          onChange={handleRmChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        >
+          
+        
+        </select>
+      </div>
+
       <AdminPanel
         cities={cities}
         builders={builders}
@@ -183,8 +218,8 @@ function Requests() {
         onBuilderChange={setSelectedBuilder}
         records={records}
         status={status}
-        rmfm={rmfm} // Pass RM/FM data for filters
-        comMapDetails={comMapDetails} // Pass community mapping data
+        rmfm={rmfm}
+        comMapDetails={comMapDetails}
         onUpdateRecord={onUpdateRecord}
         requestsLoading={requestsLoading}
         pagination={pagination}

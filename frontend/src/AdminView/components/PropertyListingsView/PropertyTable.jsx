@@ -30,12 +30,12 @@ export function PropertyTable({
   // New state for delete success modal
   const [deleteSuccessModal, setDeleteSuccessModal] = useState(false)
   const [deletedPropertyName, setDeletedPropertyName] = useState("")
-console.log("propppppp", properties)
+
   useEffect(() => {
     const loadStatusOptions = async () => {
       try {
         const options = await fetchStatusOptions()
-
+        
         setStatusOptions(options.data.result)
       } catch (error) {
         console.error("Error fetching status options:", error)
@@ -159,7 +159,7 @@ console.log("propppppp", properties)
         <thead>
           <tr className="border-b bg-gray-50 overflow-auto">
             <th className="whitespace-nowrap px-6 py-3 text-left text-sm font-semibold text-gray-500">PROPERTY ID</th>
-            <th className="whitespace-nowrap px-6 py-3 text-left text-sm font-semibold text-gray-500">PROPERTY NAME</th>
+            <th className="whitespace-nowrap px-6 py-3 text-left text-sm font-semibold text-gray-500">COMMUNITY</th>
             <th className="whitespace-nowrap px-6 py-3 text-left text-sm font-semibold text-gray-500">CITY</th>
             <th className="whitespace-nowrap px-6 py-3 text-left text-sm font-semibold text-gray-500">PRICE</th>
             <th className="whitespace-nowrap px-6 py-3 text-left text-sm font-semibold text-gray-500">CURRENT STATUS</th>

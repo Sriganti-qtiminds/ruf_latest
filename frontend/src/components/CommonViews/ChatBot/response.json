@@ -9,7 +9,7 @@
         "Fill All Mandatory fields and Click On [Submit] Button",
         "Property Posting is Successful, Will be Visible After Approvals"
       ],
-      "link": "https://www.rufrent.com/property/rent/postProperties",
+      "link": "https://www.rufrent.com/base/rentals/postProperties",
       "button_text": "Property Posting Process" 
     },
     {
@@ -21,13 +21,13 @@
         "Once a property is shortlisted, click on [Request a Callback] Button.",
         "Our Relationship manager will get in touch with you to provide further assistance"
       ],
-      "link": "https://www.rufrent.com/user",
+      "link": "https://www.rufrent.com/",
       "button_text": "Explore More Properties" 
     },
     {
       "intent_id": 3,
       "title": "📞 Contact Us",
-      "link": "https://www.rufrent.com/footer/contact-us",
+      "link": "https://www.rufrent.com/base/footer/contact-us",
        "button_text": "Connect With Us" 
     },
     {
@@ -36,7 +36,7 @@
       "steps": [
         "Find Favourite Properties"
       ],
-      "link": "https://www.rufrent.com/property/rent/myfavorites",
+      "link": "https://www.rufrent.com/base/rentals/myfavorites",
       "button_text": "My Favourities" 
     }
   ]

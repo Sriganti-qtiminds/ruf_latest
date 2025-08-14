@@ -29,7 +29,8 @@ const PostPropertiesView = () => {
   const [submissionStatus, setSubmissionStatus] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const jwtToken = Cookies.get(jwtSecretKey);
-
+  console.log("User ID", userData.id);
+  
   useEffect(() => {
     const initRender = () => {
       if (!jwtToken) {
@@ -298,6 +299,7 @@ useEffect(() => {
     }
   
     const propertyData = {
+      user_id: userId,
       prop_type_id: formData.propertyType || null,
       home_type_id: formData.bedrooms || null,
       prop_desc_id: formData.propertyDescription || null,
@@ -406,7 +408,7 @@ useEffect(() => {
   const resetSubmissionStatus = async () => {
     setSubmissionStatus(null);
     await fetchUserListings(userId);
-    navigate("/user");
+    navigate("/");
   };
 
   return (

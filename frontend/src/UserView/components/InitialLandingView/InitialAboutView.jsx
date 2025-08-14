@@ -9,6 +9,7 @@ const jwtSecretKey = `${import.meta.env.VITE_JWT_SECRET_KEY}`;
 import tailwindStyles from "../../../utils/tailwindStyles";
 
 import AuthModal from "../../../components/CommonViews/AuthModalView";
+import { RENTALS_BASE } from "../../../routes/routesPath";
 
 const AboutSection = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const AboutSection = () => {
     if (!isLogin) {
       setLoginOpen(true);
     } else {
-      navigate(`/property/rent/postProperties`);
+      navigate(`${RENTALS_BASE}/postProperties`);
     }
   };
 
@@ -53,7 +54,7 @@ const AboutSection = () => {
       <AuthModal
         isOpen={loginOpen}
         onClose={closeModel}
-        triggerBy={"/property/rent/postProperties"}
+        triggerBy={`${RENTALS_BASE}/postProperties`}
       />
     </>
   );

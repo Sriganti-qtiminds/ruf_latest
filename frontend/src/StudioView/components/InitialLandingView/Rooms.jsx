@@ -1,5 +1,4 @@
 
-// export default Rooms;
 
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -7,7 +6,6 @@ import { fetchAllAreasData } from "../../../services/studioapiservices";
 import ImageModal from "./ImageModel";
 import { studioTailwindStyles } from "../../../utils/studioTailwindStyles";
 
-const apiUrl = `${import.meta.env.VITE_API_URL}`;
 const baseS3Url = `${import.meta.env.VITE_STUDIO_ROOMS_BASE_S3_URL}`;
 
 const RoomCard = ({ room, index, openModal }) => {
@@ -16,7 +14,7 @@ const RoomCard = ({ room, index, openModal }) => {
 
   useEffect(() => {
     let interval;
-    if (isHovered) {
+    if (isHovered && room.images.length > 1) {
       interval = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % room.images.length);
       }, 2000);
@@ -25,22 +23,19 @@ const RoomCard = ({ room, index, openModal }) => {
   }, [isHovered, room.images.length]);
 
   const handlePrev = () => {
-    setCurrentIndex(
-      (prev) => (prev - 1 + room.images.length) % room.images.length
-    );
+    setCurrentIndex((prev) => (prev - 1 + room.images.length) % room.images.length);
   };
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % room.images.length);
   };
 
-  const handleDotClick = (index) => {
-    setCurrentIndex(index);
+  const handleDotClick = (idx) => {
+    setCurrentIndex(idx);
   };
 
-  // Get the current image's category for the label
-  const currentCategory =
-    room.images[currentIndex]?.category || room.defaultCategory;
+  const currentCategory = room.images[currentIndex]?.category || room.defaultCategory || "";
+  const currentDescription = room.images[currentIndex]?.description || room.descriptions?.[currentCategory] || "No description available";
 
   return (
     <div className="flex items-stretch justify-center w-full">
@@ -50,20 +45,10 @@ const RoomCard = ({ room, index, openModal }) => {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div
-          className="relative md:w-4/6 overflow-hidden h-52 md:h-80 bg-white"
-          data-room-index={index}
-        >
-          <div
-            className="flex transition-transform duration-500"
-            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-          >
+        <div className="relative md:w-4/6 overflow-hidden h-52 md:h-80 bg-white" data-room-index={index}>
+          <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
             {room.images.map((img, imgIndex) => (
-              <div
-                key={imgIndex}
-                className="flex-none w-full flex items-center justify-center"
-                data-image-index={imgIndex}
-              >
+              <div key={imgIndex} className="flex-none w-full flex items-center justify-center" data-image-index={imgIndex}>
                 <img
                   src={img.url}
                   alt={`${room.title} ${img.category} Image ${img.index + 1}`}
@@ -73,6 +58,7 @@ const RoomCard = ({ room, index, openModal }) => {
               </div>
             ))}
           </div>
+
           <div
             className="absolute top-1/2 left-2.5 -translate-y-1/2 bg-black/50 text-white w-10 h-10 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300 hover:bg-black/70 hover:scale-110"
             onClick={handlePrev}
@@ -89,26 +75,23 @@ const RoomCard = ({ room, index, openModal }) => {
             {room.images.map((_, dotIndex) => (
               <div
                 key={dotIndex}
-                className={`w-2.5 h-2.5 rounded-full cursor-pointer transition-all duration-300 ${dotIndex === currentIndex ? "bg-[#E07A5F]" : "bg-white/50"}`}
+                className={`w-2.5 h-2.5 rounded-full cursor-pointer transition-all duration-300 ${
+                  dotIndex === currentIndex ? "bg-[#E07A5F]" : "bg-white/50"
+                }`}
                 onClick={() => handleDotClick(dotIndex)}
-              ></div>
+              />
             ))}
           </div>
         </div>
+
         <div className="p-4 md:w-2/6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className={`${studioTailwindStyles.heading_3} text-[#1A1F3D]`}>
-              {room.title}
-            </h3>
+            <h3 className={`${studioTailwindStyles.heading_3} text-[#1A1F3D]`}>{room.title}</h3>
             <span className="text-sm font-medium text-white bg-gradient-to-br from-[#E07A5F] to-[#7C9A92] px-3 py-1 rounded-full">
-              {currentCategory.charAt(0).toUpperCase() +
-                currentCategory.slice(1)}
+              {currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1)}
             </span>
           </div>
-          <p className={`${studioTailwindStyles.paragraph_2} text-gray-600`}>
-            {room.images[currentIndex]?.description ||
-              room.descriptions[room.defaultCategory]}
-          </p>
+          <p className={`${studioTailwindStyles.paragraph_2} text-gray-600`}>{currentDescription}</p>
         </div>
       </div>
       <div className="w-1/4 hidden lg:block" />
@@ -118,10 +101,7 @@ const RoomCard = ({ room, index, openModal }) => {
 
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center h-40">
-    <div
-      className="relative w-16 h-16"
-      style={{ animation: "spin 2s linear infinite" }}
-    >
+    <div className="relative w-16 h-16" style={{ animation: "spin 2s linear infinite" }}>
       <div
         className="absolute inset-0 border-4 border-t-[#E07A5F] border-l-[#7C9A92] border-r-[#E07A5F] border-b-[#7C9A92] rounded-full"
         style={{ animation: "spin 2s linear infinite" }}
@@ -140,35 +120,26 @@ const LoadingSpinner = () => (
         />
       </div>
     </div>
-    <style>
-      {`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% { transform: scale(1) rotate(45deg); }
-          50% { transform: scale(1.2) rotate(45deg); }
-        }
-      `}
-    </style>
+    <style>{`
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1) rotate(45deg); }
+        50% { transform: scale(1.2) rotate(45deg); }
+      }
+    `}</style>
   </div>
 );
 
 const Rooms = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [apiData, setApiData] = useState(null);
   const [roomsData, setRoomsData] = useState({
     title: "Design Your Perfect Space",
     description:
       "Explore our customized design solutions for every room in your home, with options to fit any budget and style preference.",
     items: [],
-  });
-  const [modalState, setModalState] = useState({
-    isOpen: false,
-    room: null,
-    imageIndex: 0,
-    category: "",
   });
 
   useEffect(() => {
@@ -176,47 +147,47 @@ const Rooms = () => {
       try {
         setIsLoading(true);
         const response = await fetchAllAreasData();
-        const data = response.data.result;
+        const data = response.data.result; // this is an array
 
-        // Group rooms by area_type, collecting images and descriptions from all categories
+        // Group rooms by area_type, each with images and descriptions keyed by budget_type
         const roomMap = {};
-        // Dynamically generate tabs from API keys and reverse for desired order
-        const tabs = Object.keys(data).map((tier) => tier);
-        const categoryOrder = tabs.reverse();
 
-        for (const category of categoryOrder) {
-          if (data[category]) {
-            for (const room of data[category]) {
-              const { area_type, room_desc, image_count } = room;
-              if (!roomMap[area_type]) {
-                roomMap[area_type] = {
-                  title: area_type.charAt(0).toUpperCase() + area_type.slice(1),
-                  images: [],
-                  descriptions: {}, // Store descriptions for each category
-                  defaultCategory: "premium",
-                };
-              }
-              // Store description for this category
-              roomMap[area_type].descriptions[category] =
-                room_desc || "No description available";
-              // Collect images for this category
-              const count = image_count || 1;
-              for (let i = 1; i <= count; i++) {
-                roomMap[area_type].images.push({
-                  url: `${baseS3Url}/${category}/${area_type}/img_${i}.jpg`,
-                  category,
-                  index: i - 1,
-                  description: room_desc || "No description available", // Associate description with image
-                });
-              }
-            }
+        data.forEach((room) => {
+          const {
+            area_type,
+            budget_type,
+            images_count,
+            region_description,
+          } = room;
+
+          if (!roomMap[area_type]) {
+            roomMap[area_type] = {
+              title: area_type.charAt(0).toUpperCase() + area_type.slice(1),
+              images: [],
+              descriptions: {},
+              defaultCategory: "elegant", // or any default budget_type you want
+            };
           }
-        }
 
-        // Convert roomMap to array of items
+          // Save description by budget_type
+          roomMap[area_type].descriptions[budget_type] =
+            region_description?.Description || "No description available";
+
+          // Add images for this budget_type and area_type
+          const count = images_count || 1;
+          for (let i = 1; i <= count; i++) {
+            roomMap[area_type].images.push({
+              url: `${baseS3Url}/${budget_type}/${area_type}/img_${i}.jpg`,
+              category: budget_type,
+              index: i - 1,
+              description: region_description?.Description || "No description available",
+            });
+          }
+        });
+
+        // Convert to array for rendering
         const items = Object.values(roomMap);
 
-        setApiData(data);
         setRoomsData((prev) => ({
           ...prev,
           items,
@@ -224,12 +195,19 @@ const Rooms = () => {
       } catch (error) {
         console.error("Error fetching rooms:", error);
       } finally {
-        setTimeout(() => setIsLoading(false), 2000);
+        setTimeout(() => setIsLoading(false), 1500);
       }
     };
 
     fetchRooms();
   }, []);
+
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    room: null,
+    imageIndex: 0,
+    category: "",
+  });
 
   const openModal = (room, imageIndex, category) => {
     setModalState({ isOpen: true, room, imageIndex, category });
@@ -243,24 +221,19 @@ const Rooms = () => {
     <section id="rooms" className="py-10 bg-gray-50 w-full">
       <div className="container mx-auto px-4 lg:px-6">
         <div className="text-center mb-6">
-          <h2
-            className={`${studioTailwindStyles.heading_2} text-[#1A1F3D] mb-4`}
-          >
+          <h2 className={`${studioTailwindStyles.heading_2} text-[#1A1F3D] mb-4`}>
             {roomsData.title}
           </h2>
-          <p
-            className={`${studioTailwindStyles.paragraph_2} text-gray-600 max-w-2xl mx-auto`}
-          >
+          <p className={`${studioTailwindStyles.paragraph_2} text-gray-600 max-w-2xl mx-auto`}>
             {roomsData.description}
           </p>
         </div>
+
         <div className="px-4 lg:px-6 mx-auto">
           {isLoading ? (
-            <div className="transition-opacity duration-300 ease-in-out opacity-100">
-              <LoadingSpinner />
-            </div>
+            <LoadingSpinner />
           ) : (
-            <div className="grid grid-cols-1 gap-8 transition-opacity duration-300 ease-in-out opacity-100">
+            <div className="grid grid-cols-1 gap-8">
               {roomsData.items.map((room, index) => (
                 <RoomCard
                   key={`${room.title}-${index}`}
@@ -273,6 +246,7 @@ const Rooms = () => {
           )}
         </div>
       </div>
+
       <ImageModal
         isOpen={modalState.isOpen}
         room={modalState.room}

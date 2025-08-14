@@ -5,6 +5,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { RENTALS_BASE } from "../../../routes/routesPath";
 
 const apiUrl = `${import.meta.env.VITE_API_URL}`;
 
@@ -20,7 +21,8 @@ const CommunityCarousel = () => {
   useEffect(() => {
     const fetchCommunityImages = async () => {
       try {
-        const res = await axios.get(`${apiUrl}/getCommunityImg`);
+        // direct backend api call
+        const res = await axios.get(`${apiUrl}/user/getCommunityImg`);
 
         if (Array.isArray(res.data.data)) {
           setImages(res.data.data);
@@ -67,7 +69,7 @@ const CommunityCarousel = () => {
       .replace(/^myhome\s*/i, "");
     const result = name.charAt(0).toUpperCase() + name.slice(1);
     navigate(
-      `/property/rent?city=Hyderabad&builders=MyHome&community=Myhome+${result}`
+      `${RENTALS_BASE}?city=Hyderabad&builders=MyHome&community=Myhome+${result}`
     );
   };
 

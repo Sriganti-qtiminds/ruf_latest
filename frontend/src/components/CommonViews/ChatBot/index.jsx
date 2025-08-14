@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import Chatbot from "./Chatbot";
+import ChatbotModal from "./Chatbot";
 
 const ChatBot = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -30,10 +30,12 @@ const ChatBot = () => {
         </button>
       </div>
 
-      {/* Chatbot */}
-      {isChatbotOpen && (
-        <Chatbot onClose={() => setIsChatbotOpen(false)} />
-      )}
+      {/* Chatbot Modal */}
+      <ChatbotModal
+        isOpen={isChatbotOpen}
+        onClose={() => setIsChatbotOpen(false)}
+        buttonRef={buttonRef}
+      />
     </>
   );
 };

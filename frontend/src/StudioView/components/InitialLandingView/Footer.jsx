@@ -54,7 +54,7 @@ const footer = {
     ],
   },
 
-  copyright: "© 2024-25 QTIMinds Pvt. Ltd.",
+  copyright: "© 2025 QTIMinds Pvt. Ltd.",
 };
 
 const Footer = () => {

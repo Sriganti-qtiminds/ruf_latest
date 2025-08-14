@@ -1,8 +1,8 @@
 // MenuDropdown.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { NavLink } from "react-router-dom";
-import tailwindStyles from "../../utils/tailwindStyles"; // Assuming this contains your Tailwind style configurations
-
+import tailwindStyles from "../../utils/tailwindStyles"; 
+import { FOOTER_PATH } from "../../routes/routesPath";
 const footerSections = [
   {
     id: "about-us",
@@ -76,22 +76,15 @@ const MenuDropdown = ({ onCloseMobileMenu }) => {
       {isOpen && (
         <div className=" absolute top-8 -right-10 mt-2 w-32 bg-white rounded-md shadow-lg z-50">
           {footerSections.map((section) => (
-            <NavLink
+           <NavLink
               key={section.id}
-              to={`/footer/${section.id}`}
+              to={`${FOOTER_PATH}/${section.id}`}
               className={({ isActive }) =>
-                `${tailwindStyles.header_item} 
-                 block 
-                 w-full 
-                 text-left 
-                 px-4 
-                 py-2 
-                 text-sm 
-                 text-gray-700 
-                 hover:bg-gray-100 
+                `block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100
+                 ${tailwindStyles.header_item}
                  ${isActive ? "text-[#001433] font-bold underline" : ""}`
               }
-              onClick={() => handleItemClick(`/footer/${section.id}`)}
+              onClick={handleItemClick}
             >
               {section.label}
             </NavLink>

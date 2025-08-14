@@ -4,7 +4,7 @@ import { PropertyTable } from './PropertyTable'
 import { PropertyData } from './PropertyData'
 
 export function PropertyListings() {
-  const { properties, loading, error, fetchData, updateStatus, currentPage, totalPages, setCurrentPage, appliedFilters, deletePropertyData } = PropertyData();  // ✅ Include setCurrentPage
+  const { properties, loading, error, fetchData, updateStatus, currentPage, totalPages, setCurrentPage, appliedFilters, deletePropertyData } = PropertyData(); 
  
   const [filters, setFilters] = useState({
     searchQuery: '',
@@ -21,7 +21,7 @@ export function PropertyListings() {
     fetchData(newFilters)
   }
  useEffect(() => {
-    fetchData({ ...filters, page: currentPage });  // ✅ Fetch new page when `currentPage` changes
+    fetchData({ ...filters, page: currentPage });  
   }, [currentPage, filters]); 
   const handleStatusChange = async (propertyId, newStatus) => {
     await updateStatus(propertyId, newStatus);
@@ -29,7 +29,7 @@ export function PropertyListings() {
 
   const handlePageChange = (newPage) => {
     if (newPage > 0 && newPage <= totalPages) {
-      setCurrentPage(newPage);  // ✅ Update currentPage correctly
+      setCurrentPage(newPage);  
     }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import St from "./St";
-import { fetchRmFms } from "./newApiServices";
+import { fetchComMapDetails } from "../../../services/adminapiservices";
 
 function  StaffAssignment() {
   const [rmfm, setRmfm] = useState([]);
@@ -8,7 +8,7 @@ function  StaffAssignment() {
   useEffect(() => {
     const fetchrmfm = async () => {
       try {
-        const response = await fetchRmFms();
+        const response = await fetchComMapDetails();
         setRmfm(response.data.result);
       } catch (error) {
         console.error("Error fetching RM/FM:", error);

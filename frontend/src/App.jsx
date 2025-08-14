@@ -1,6 +1,23 @@
+
+
+
+
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 
+// Route Constants
+import {
+  ADMIN_BASE,
+  RM_BASE,
+  FM_BASE,
+  RENTALS_BASE,
+  STUDIO_BASE,
+  ENQUIRIES_PATH,
+  FOOTER_PATH,
+} from "../src/routes/routesPath";
+
+// Components
 import InitialLandingPage from "./UserView/components/InitialLandingView";
 import NotfoundView from "./components/CommonViews/NotfoundView";
 import UnauthorizeView from "./components/CommonViews/UnauthorizeView";
@@ -36,7 +53,7 @@ import StaffAssignment from "./AdminView/components/StaffAssignemntView";
 import Communities from "./AdminView/components/AddCommunityView/CommunityPage";
 import UserManagement from "./AdminView/components/UserManagementView";
 import DBTables from "./AdminView/components/DBTables";
-
+import Reviews from "./AdminView/components/Reviews";
 import AuthModal from "./components/CommonViews/AuthModalView";
 
 // Protected Route
@@ -46,78 +63,98 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import ChatBot from "./components/CommonViews/ChatBot";
 
 import FooterPage from "./UserView/components/InitialLandingView/FooterViews/FooterPage";
+import StudioUserLayout from "./StudioView/layout/StudioUserLayout";
+import StudioLandingView from "./StudioView/components/InitialLandingView";
+import StudioDashboard from "./StudioView/components/InitialLandingView/StudioDashboard";
+import ProjectStatus from "./StudioView/components/ProjectStatus";
+import AdminBoard from "./StudioView/adminboard/AdminBoard";
 
 import "./App.css";
-import Reviews from "./AdminView/components/Reviews";
-
-import StudioLandingView from "./StudioView/components/InitialLandingView";
-import StudioUserLayout from "./StudioView/layout/StudioUserLayout";
+import AdminPanel from "./AdminView/components/RequestsView/AdminPanel";
 
 const App = () => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [intendedPath, setIntendedPath] = useState(null);
 
-  const [loginModel, setLoginModel] = useState(true);
-  const onCloseModel = () => {
-    setLoginModel(!loginModel);
+  useEffect(() => {
+   
+  }, [isModalOpen, intendedPath]);
+
+  const onCloseModal = () => {
+   
+    setIsModalOpen(false);
+    setIntendedPath(null);
     navigate("/");
   };
+
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
-    script.onload = () => console.log("Razorpay script loaded!");
+    script.onload = () => console.log("App: Razorpay script loaded");
     document.body.appendChild(script);
     return () => document.body.removeChild(script);
   }, []);
+
+  const passProps = {
+    isModalOpen,
+    setIsModalOpen,
+    intendedPath,
+    setIntendedPath,
+  };
 
   return (
     <>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<InitialLandingPage />} />
-
-        <Route
-          path="signup"
-          element={<AuthModal isOpen={loginModel} onClose={onCloseModel} />}
-        />
-
-        <Route path="/footer/:section" element={<FooterPage />} />
+        <Route path="/" element={<InitialLandingPage {...passProps} />} />
+        <Route path={`${FOOTER_PATH}/:section`} element={<FooterPage />} />
+        <Route path={`${STUDIO_BASE}`} element={<StudioUserLayout {...passProps} />}>
+          <Route index element={<StudioLandingView />} />
+          <Route path="studioDashboard" element={<StudioDashboard />} />
+          <Route path="projectStatus" element={<ProjectStatus />} />
+          <Route path="profile" element={<ProfileView />} />
+        </Route>
 
         {/* User Routes */}
-        {/* <Route element={<ProtectedRoute roles={["user"]} />}> */}
-
-        <Route path="/property/rent" element={<UserLayout />}>
-          <Route index element={<UserLandingView />} />
-          <Route path="mylistings" element={<MyListingsView />} />
-          <Route path="postProperties" element={<PostPropertiesView />} />
-          <Route path="myfavorites" element={<FavoritesView />} />
-          <Route path="profile" element={<ProfileView />} />
-          <Route path="transactions" element={<UserTransactionsView />} />
-          <Route path="myservices" element={<ServicesView />} />
-        </Route>
-        {/* </Route> */}
-        <Route path="/studio" element={<StudioUserLayout />}>
-          <Route index element={<StudioLandingView />} />
-          <Route path="profile" element={<ProfileView />} />
+        <Route
+          element={<ProtectedRoute roles={["User", "Admin", "RM", "FM"]} {...passProps} />}
+        >
+          <Route path={`${RENTALS_BASE}`} element={<UserLayout {...passProps} />}>
+            <Route index element={<UserLandingView />} />
+            <Route path="mylistings" element={<MyListingsView />} />
+            <Route path="postProperties" element={<PostPropertiesView />} />
+            <Route path="myfavorites" element={<FavoritesView />} />
+            <Route path="profile" element={<ProfileView />} />
+            <Route path="transactions" element={<UserTransactionsView />} />
+            <Route path="myservices" element={<ServicesView />} />
+          </Route>
         </Route>
 
-        <Route element={<ProtectedRoute roles={["RM", "Admin"]} />}>
-          <Route index path="enquiries" element={<EnquiriesView />} />
+        {/* Common Routes */}
+        <Route
+          element={<ProtectedRoute roles={["RM", "Admin"]} {...passProps} />}
+        >
+          <Route path={ENQUIRIES_PATH} element={<EnquiriesView />} />
+        </Route>
+        <Route element={<ProtectedRoute roles={["Admin"]}/>}>
+          <Route path={"/base/studio/AdminBoard"} element={<AdminBoard />} />
+        </Route>
+        {/* <Route path="/base/studio/AdminBoard" element={<AdminBoard />} /> */}
+        {/* RM Route */}
+        <Route element={<ProtectedRoute roles={["RM"]} {...passProps} />}>
+          <Route path={RM_BASE} element={<RMView />} />
         </Route>
 
-        {/* RM Routes */}
-        <Route element={<ProtectedRoute roles={["RM"]} />}>
-          <Route index path="RM" element={<RMView />} />
-        </Route>
-
-        {/* FM Routes */}
-        <Route element={<ProtectedRoute roles={["FM"]} />}>
-          <Route index path="FM" element={<FMView />} />
+        {/* FM Route */}
+        <Route element={<ProtectedRoute roles={["FM"]} {...passProps} />}>
+          <Route path={FM_BASE} element={<FMView />} />
         </Route>
 
         {/* Admin Routes */}
-        <Route element={<ProtectedRoute roles={["Admin"]} />}>
-          <Route path="/admin" element={<AdminLayout />}>
+        <Route element={<ProtectedRoute roles={["Admin"]} {...passProps} />}>
+          <Route path={ADMIN_BASE} element={<AdminLayout {...passProps} />}>
             <Route index element={<Dashboard />} />
             <Route path="properties" element={<PropertyListings />} />
             <Route path="requests" element={<Requests />} />
@@ -131,15 +168,23 @@ const App = () => {
           </Route>
         </Route>
 
-        {/* Unauthorized Route */}
+        {/* Fallback Routes */}
         <Route path="/unauthorize" element={<UnauthorizeView />} />
-
-        {/* Catch-All Route */}
         <Route path="*" element={<NotfoundView />} />
       </Routes>
+
+      <AuthModal isOpen={isModalOpen} onClose={onCloseModal} triggerBy={intendedPath} />
       <ChatBot />
     </>
   );
 };
 
+App.propTypes = {
+  isModalOpen: PropTypes.bool,
+  setIsModalOpen: PropTypes.func,
+  intendedPath: PropTypes.string,
+  setIntendedPath: PropTypes.func,
+};
+
 export default App;
+

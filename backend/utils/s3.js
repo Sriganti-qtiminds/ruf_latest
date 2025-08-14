@@ -75,6 +75,67 @@ class S3Service {
       throw new Error("Failed to upload images: " + error.message);
     }
   }
+ async uploadImagess(files, folderPath) {
+  try {
+    const uploadedUrls = [];
+
+    await Promise.all(
+      files.map(async (file) => {
+        const resizedImageBuffer = await sharp(file.buffer)
+          .resize(800, 600)
+          .toBuffer();
+
+        const filePath = `${folderPath}${file.originalname}`;
+        await this.s3.send(
+          new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: filePath,
+            Body: resizedImageBuffer,
+            ContentType: file.mimetype,
+          })
+        );
+
+        const fileUrl = `${process.env.S3_LOCATION}/${filePath}`;
+        uploadedUrls.push(fileUrl);
+      })
+    );
+
+    return uploadedUrls;
+  } catch (error) {
+    throw new Error("Failed to upload images: " + error.message);
+  }
+}
+
+ 
+async uploadVideos(files, folderPath) {
+  try {
+    const uploadedUrls = [];
+
+    await Promise.all(
+      files.map(async (file) => {
+        const filePath = `${folderPath}${file.originalname}`;
+        await this.s3.send(
+          new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: filePath,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+          })
+        );
+
+        const fileUrl = `${process.env.S3_LOCATION}/${filePath}`;
+        uploadedUrls.push(fileUrl);
+      })
+    );
+
+    return uploadedUrls;
+  } catch (error) {
+    throw new Error("Failed to upload videos: " + error.message);
+  }
+}
+
+
+
 
   async uploadImage(file, uid, folderType) {
   const folderPath = `${folderType}/${uid}/`;
@@ -403,6 +464,8 @@ class S3Service {
       throw new Error("Failed to list files in S3.");
     }
   }
+ 
+
 
   async ensureFolderExists(folderPath) {
     try {

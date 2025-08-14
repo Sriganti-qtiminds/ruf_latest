@@ -1,6 +1,7 @@
 
 import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { STUDIO_BASE } from "../../routes/routesPath";
 
 const TabNavigation = () => {
   const location = useLocation();
@@ -19,7 +20,7 @@ const TabNavigation = () => {
       link: "https://www.Rufrent.com/",
     },
     {
-      id: "/studio",
+      id: `${STUDIO_BASE}`,
       label: "Studio",
       title: "Rufrent - Best studio spaces for your creative needs",
       metaDescription: "Discover our studio spaces for your creative needs.",

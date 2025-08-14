@@ -108,6 +108,7 @@ const RMView = () => {
       try {
         const responseData = await getTasks({ rmId: id });
         const result = responseData?.result || [];
+       
         setRequestRmDetails(result);
         setRmCommunities(
           result.map((item) => item.community_name).filter(Boolean)

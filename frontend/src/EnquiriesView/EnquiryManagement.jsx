@@ -1,9 +1,16 @@
+
+
+
+
 import { useState, useEffect, useCallback, forwardRef } from "react";
-import axios from "axios";
+import {
+  fetchEnquiries,
+  fetchEnquiryDetails,
+  updateEnquiry,
+  fetchEnquiryDropdownOptions,
+} from "../services/adminapiservices";
 import tailwindStyles from "../utils/tailwindStyles";
 import React from "react";
-
-const apiUrl = `${import.meta.env.VITE_API_URL}`;
 
 // InputField Component
 const InputField = forwardRef(
@@ -262,12 +269,12 @@ const PreferencesTab = React.memo(
               onChange={handleNumericFieldChange("enq_rental_high")}
               type="number"
             />
-            {renderSelect(
+            {/* {renderSelect(
               "enq_parking_type",
               "Parking Type",
               data.enq_parking_type,
               dropdownOptions.parkingType
-            )}
+            )} */}
             {renderSelect(
               "enq_parking_count",
               "Parking Count",
@@ -347,25 +354,27 @@ const EnquiryManagementDashboard = () => {
     propType: [],
     availability: [],
     facing: [],
-    parkingType: [],
+    //parkingType: [],
   });
 
   /* ──────────────────────────────────────────
      FETCH ENQUIRIES
   ────────────────────────────────────────── */
   useEffect(() => {
-    const fetchEnquiries = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(`${apiUrl}/getNewEnquiryRecord`);
-        setEnquiries(data.result);
+        const data = await fetchEnquiries();
+        console.log("fetchEnquiries data:", data);
+        setEnquiries(data);
       } catch (err) {
+        console.error("Error fetching enquiries:", err.message);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-    fetchEnquiries();
+    fetchData();
   }, []);
 
   /* ──────────────────────────────────────────
@@ -373,10 +382,16 @@ const EnquiryManagementDashboard = () => {
   ────────────────────────────────────────── */
   useEffect(() => {
     if (modalMode !== "edit") return;
-    axios
-      .get(`${apiUrl}/getPostData`)
-      .then(({ data }) => setDropdownOptions(data.result))
-      .catch((err) => console.error("Error fetching dropdowns:", err));
+    const fetchOptions = async () => {
+      try {
+        const data = await fetchEnquiryDropdownOptions();
+        console.log("fetchEnquiryDropdownOptions data:", data);
+        setDropdownOptions(data);
+      } catch (err) {
+        console.error("Error fetching dropdown options:", err.message);
+      }
+    };
+    fetchOptions();
   }, [modalMode]);
 
   /* ──────────────────────────────────────────
@@ -384,15 +399,17 @@ const EnquiryManagementDashboard = () => {
   ────────────────────────────────────────── */
   const handleMoreInfoClick = async (enquiryRow) => {
     try {
-      const { data } = await axios.get(
-        `${apiUrl}/getNewEnquiryRecord?enq_id=${enquiryRow.enq_id}`
-      );
-      const enquiry = data.result[0];
-      setCurrentEnquiry(enquiry);
-      setModalMode("view");
-      setIsModalOpen(true);
+      const enquiry = await fetchEnquiryDetails(enquiryRow.enq_id);
+      console.log("fetchEnquiryDetails data:", enquiry);
+      if (enquiry) {
+        setCurrentEnquiry(enquiry);
+        setModalMode("view");
+        setIsModalOpen(true);
+      } else {
+        console.error("No enquiry data returned for enq_id:", enquiryRow.enq_id);
+      }
     } catch (err) {
-      console.error("Error fetching enquiry details:", err);
+      console.error("Error fetching enquiry details:", err.message);
     }
   };
 
@@ -440,19 +457,21 @@ const EnquiryManagementDashboard = () => {
         editForm.enq_super_area === "" ? null : Number(editForm.enq_super_area),
     };
     try {
-      await axios.put(`${apiUrl}/updatenq `, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
-      setEnquiries((prev) =>
-        prev.map((q) => (q.enq_id === payload.enq_id ? payload : q))
-      );
-      setCurrentEnquiry(payload);
-      setIsModalOpen(false);
-      setModalMode("view");
-      setEditForm(null);
+      const result = await updateEnquiry(payload);
+      if (result.success) {
+        setEnquiries((prev) =>
+          prev.map((q) => (q.enq_id === payload.enq_id ? payload : q))
+        );
+        setCurrentEnquiry(payload);
+        setIsModalOpen(false);
+        setModalMode("view");
+        setEditForm(null);
+      } else {
+        throw new Error(result.error || "Update failed");
+      }
     } catch (err) {
-      console.error("Update failed:", err);
-      alert(`Update failed: ${err.response?.data?.error || err.message}`);
+      console.error("Update failed:", err.message);
+      alert(`Update failed: ${err.message}`);
     }
   };
 
@@ -469,7 +488,7 @@ const EnquiryManagementDashboard = () => {
 
       {loading ? (
         <div>Loading...</div>
-      ) : enquiries.length == 0 ? (
+      ) : enquiries.length === 0 ? (
         <div className="text-red-500">No Enquiries Found</div>
       ) : error ? (
         <div className="text-red-500">Error: {error}</div>
@@ -540,7 +559,11 @@ const EnquiryManagementDashboard = () => {
                     </tr>
                   ))
                 ) : (
-                  <div>No Enquiries Found</div>
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                      No Enquiries Found
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>

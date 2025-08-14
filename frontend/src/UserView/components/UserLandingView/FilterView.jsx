@@ -1,20 +1,12 @@
 
-
-// export default FilterSection;
-
 import React, { useState, useEffect } from "react";
 import { FaFilter } from "react-icons/fa6";
 import { Check } from "lucide-react";
-
 import tailwindStyles from "../../../utils/tailwindStyles";
 import useFilterStore from "../../../store/filterStore";
 import SearchableDropdown from "./SearchableDropdown";
 
-const FilterSection = ({
-  currentPageChange,
-  setSearchParams,
-  searchParams,
-}) => {
+const FilterSection = ({ currentPageChange, setSearchParams, searchParams }) => {
   const [isShow, setIsShow] = useState(false);
   const {
     dropdownData,
@@ -106,7 +98,7 @@ const FilterSection = ({
 
   // Reusable dropdown renderer
   const renderDropdown = (name, options, label) => (
-    <div className={`${label == "Community" && "col-span-2"}`}>
+    <div className={`${label === "Community" && "col-span-2"}`}>
       <p className={`${tailwindStyles.paragraph_b} mb-1`}>{label}</p>
       <SearchableDropdown
         name={name}
@@ -120,13 +112,7 @@ const FilterSection = ({
     </div>
   );
 
-
-  const renderCheckboxGroup = (
-    name,
-    options,
-    label,
-    gridCols = "grid-cols-3"
-  ) => (
+  const renderCheckboxGroup = (name, options, label, gridCols = "grid-cols-3") => (
     <div className="flex flex-col">
       <p className={`${tailwindStyles.paragraph_b} text-start pb-2`}>{label}</p>
       <div className={`grid ${gridCols} gap-2`}>
@@ -147,9 +133,7 @@ const FilterSection = ({
                 }
               `}
             >
-              <span className="text-[10px] lg:text-xs 2xl:text-md">
-                {item.name}
-              </span>
+              <span className="text-[10px] lg:text-xs 2xl:text-md">{item.name}</span>
               <input
                 type="checkbox"
                 name={name}
@@ -191,30 +175,10 @@ const FilterSection = ({
         {renderDropdown("community", dropdownData.communityList, "Community")}
       </div>
 
-      {renderCheckboxGroup(
-        "hometype",
-        dropdownData.bedroomTypes,
-        "House Type",
-        "grid-cols-2 lg:grid-cols-4"
-      )}
-      {renderCheckboxGroup(
-        "propertydescription",
-        dropdownData.propertyDescriptions,
-        "Furnishing",
-        "grid-cols-2"
-      )}
-      {renderCheckboxGroup(
-        "availability",
-        dropdownData.availability,
-        "Availability",
-        "grid-cols-2"
-      )}
-      {renderCheckboxGroup(
-        "tenanttype",
-        dropdownData.tenanttype,
-        "Preferred Tenant",
-        "grid-cols-2 lg:grid-cols-4"
-      )}
+      {renderCheckboxGroup("hometype", dropdownData.bedroomTypes, "House Type", "grid-cols-2 lg:grid-cols-4")}
+      {renderCheckboxGroup("propertydescription", dropdownData.propertyDescriptions, "Furnishing", "grid-cols-2")}
+      {renderCheckboxGroup("availability", dropdownData.availability, "Availability", "grid-cols-2")}
+      {renderCheckboxGroup("tenanttype", dropdownData.tenanttype, "Preferred Tenant", "grid-cols-2 lg:grid-cols-4")}
 
       <div className="flex space-x-2">
         <button
@@ -234,38 +198,42 @@ const FilterSection = ({
     </form>
   );
 
-  return (
-    <div className="w-full rounded-md bg-white h-auto md:h-full">
+return (
+  <div className="w-full rounded-md bg-white h-auto md:h-full">
+    
+    {/* Mobile Filter Icon Row */}
+    <div className="md:hidden w-full flex justify-start p-2  shadow-sm">
       <button
-        className="md:hidden fixed left-2 top-14 z-20"
-        onClick={() => setIsShow(!isShow)}
+        onClick={() => setIsShow(true)}
+        className="rounded-full h-8 w-8 flex items-center justify-center bg-[#001433] shadow-md"
       >
-        <div className="rounded-full h-7 w-7 flex items-center justify-center bg-[#001433]">
-          <FaFilter className="w-3 h-3 text-[#FFC107]" />
-        </div>
+        <FaFilter className="w-4 h-4 text-[#FFC107]" />
       </button>
-
-      <div className="hidden md:block w-full h-full rounded-lg px-4">
-        <h2 className={`${tailwindStyles.heading_3} py-2`}>Filters</h2>
-        {renderFilterForm()}
-      </div>
-
-      {isShow && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
-          <div className="fixed top-0 left-0 sm:w-3/4 md:w-2/4 h-full bg-white shadow-lg z-50 p-4">
-            <button
-              className="absolute top-4 right-4 text-lg"
-              onClick={() => setIsShow(false)}
-            >
-              ✕
-            </button>
-            <h2 className="text-lg font-semibold mb-4">Filters</h2>
-            {renderFilterForm()}
-          </div>
-        </div>
-      )}
     </div>
-  );
+
+    {/* Desktop Sidebar */}
+    <div className="hidden md:block w-full h-full rounded-lg px-4">
+      <h2 className={`${tailwindStyles.heading_3} py-2`}>Filters</h2>
+      {renderFilterForm()}
+    </div>
+
+    {/* Mobile Sidebar */}
+    {isShow && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
+        <div className="fixed top-0 left-0 sm:w-3/4 md:w-2/4 h-full bg-white shadow-lg z-50 p-4">
+          <button
+            className="absolute top-4 right-4 text-lg"
+            onClick={() => setIsShow(false)}
+          >
+            ✕
+          </button>
+          <h2 className="text-lg font-semibold mb-4">Filters</h2>
+          {renderFilterForm()}
+        </div>
+      </div>
+    )}
+  </div>
+);
 };
 
 export default FilterSection;

@@ -1,57 +1,44 @@
+
+
+
 import axios from "axios";
+import { buildApiUrl } from "../utils/apiHelper";
 
-export const apiUrl = `${import.meta.env.VITE_API_URL}`;
-
-// Dashboard API's  -----------------------------------------------
+// Dashboard API's -----------------------------------------------
 
 export const fetchDashboardDataApi = async () => {
   try {
-    const response = await axios.get(`${apiUrl}/admindashboard`);
-    return response; // Return the result directly
-  } catch (error) {
-    console.error("Error fetching dashboard data:", error);
-    throw error; // Rethrow the error for handling in the component
-  }
-};
-
-// Property Listings API's -----------------------------------------
-
-export const getRecords = async (
-  tableName,
-  fieldNames,
-  whereCondition = ""
-) => {
-  try {
-    // Validate required parameters
-    if (!tableName || !fieldNames) {
-      throw new Error("Missing required parameters: tableName or fieldNames.");
-    }
-
-    const params = {
-      tableName,
-      fieldNames,
-      whereCondition,
-    };
-    const response = await axios.get(`${apiUrl}/getRecords`, { params });
+    const response = await axios.get(buildApiUrl("/admindashboard", "admin"));
     return response;
   } catch (error) {
-    console.error(
-      "Error fetching records:",
-      error.response?.data || error.message
-    );
+    console.error("Error fetching dashboard data:", error);
     throw error;
   }
 };
 
-// Fetch properties based on filters
+// Property Listings API's ---------------------------------------
+
+export const getRecords = async (tableName, fieldNames, whereCondition = "") => {
+  try {
+    if (!tableName || !fieldNames) {
+      throw new Error("Missing required parameters: tableName or fieldNames.");
+    }
+
+    const params = { tableName, fieldNames, whereCondition };
+    const response = await axios.get(buildApiUrl("/getRecords", "crud"), { params });
+    return response;
+  } catch (error) {
+    console.error("Error fetching records:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const fetchPropertiesApi = async (filters) => {
   const whereConditions = [];
 
-  // Handle single property fetch by property_id
   if (filters.property_id) {
     whereConditions.push(`property_id=${filters.property_id}`);
   } else {
-    // Only add pagination and other filters if property_id is not provided
     if (filters.status) {
       whereConditions.push(`current_status=${filters.status}`);
     }
@@ -74,9 +61,8 @@ export const fetchPropertiesApi = async (filters) => {
     whereConditions.push(`limit=${limit}`);
   }
 
-  const whereClause =
-    whereConditions.length > 0 ? whereConditions.join("&") : "";
-  const url = `${apiUrl}/adminPropListings?${whereClause}`;
+  const whereClause = whereConditions.join("&");
+  const url = buildApiUrl(`/adminPropListings?${whereClause}`, "admin");
 
   try {
     const response = await axios.get(url);
@@ -89,7 +75,7 @@ export const fetchPropertiesApi = async (filters) => {
 
 // Update property status
 export const updatePropertyStatusApi = async (propertyId, newStatus) => {
-  const url = `${apiUrl}/updateRecord`;
+  const url = buildApiUrl("/updateRecord", "crud");
   const payload = {
     tableName: "dy_property",
     fieldValuePairs: { current_status: newStatus },
@@ -108,25 +94,27 @@ export const updatePropertyStatusApi = async (propertyId, newStatus) => {
 
 export const fetchAllRequest = async () => {
   try {
-    const response = await axios.get(`${apiUrl}/rmdata`);
+    const response = await axios.get(buildApiUrl("/rmdata", "rm"));
     return response;
   } catch (error) {
+    console.error("Error fetching requests:", error);
     return error;
   }
 };
 
 export const fetchAllRmsFms = async () => {
   try {
-    const response = await axios.get(`${apiUrl}/getFmList`);
+    const response = await axios.get(buildApiUrl("/getFmList", "fm"));
     return response;
   } catch (error) {
+    console.error("Error fetching FMs:", error);
     return error;
   }
 };
 
 export const updateRecordInDB = async (recordId, updateRecords) => {
   try {
-    const response = await axios.put(`${apiUrl}/updateTask`, {
+    const response = await axios.put(buildApiUrl("/updateTask", "rm"), {
       id: recordId,
       cur_stat_code: parseInt(updateRecords.currentStatus),
       schedule_date: updateRecords.updatedScheduleDate,
@@ -134,8 +122,8 @@ export const updateRecordInDB = async (recordId, updateRecords) => {
       fm_id: parseInt(updateRecords.updatedFm),
       rm_id: parseInt(updateRecords.updatedRm),
     });
-    console.log("response", response);
-    if (response.status) {
+
+    if (response.status === 200) {
       alert("Record updated successfully!");
     } else {
       alert("Failed to update record!");

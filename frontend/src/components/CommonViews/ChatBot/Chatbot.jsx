@@ -1,10 +1,15 @@
+
+// export default ChatbotModal;
+
+
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { X } from "lucide-react";
 import tailwindStyles from "../../../utils/tailwindStyles";
 import responses from "./response.json";
 import communities from "./communities.json";
-
+import {Link} from "react-router-dom";
+import { RENTALS_BASE, FOOTER_PATH } from "../../../routes/routesPath";
 const apiUrl = `${import.meta.env.VITE_API_URL }`;
 
 const VALID_COMMUNITIES = [
@@ -29,74 +34,67 @@ const VALID_COMMUNITIES = [
 
 
 function extractRoomAndArea(sentence) {
-    // Regex patterns
-    const roomRegex = /(\d+)\s*(?:bedroom|room|br|bd|beds?|rooms?|bhk)\b/i;
-    const areaRegex = /(\d+)\s*(?:sqm|sq\.?m|square\s*meters?|m²)\b/i;
-    const communityRegex = new RegExp(
-        `\\b(${communities.communities
-            .map(c => c.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'))
-            .join('|')})\\b`,
-        'i'
-    );
+  const roomRegex = /(\d+)\s*(?:bedroom|room|br|bd|beds?|rooms?|bhk)\b/i;
+  const areaRegex = /(\d+)\s*(?:sqm|sq\.?m|square\s*meters?|m²)\b/i;
+  const communityRegex = new RegExp(
+    `\\b(${VALID_COMMUNITIES
+      .map((c) => c.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"))
+      .join("|")})\\b`,
+    "i"
+  );
 
-    // Extract rooms
-    const rooms = (() => {
-        const match = sentence.match(roomRegex);
-        return match ? parseInt(match[1], 10) : null;
-    })();
+  const rooms = (() => {
+    const match = sentence.match(roomRegex);
+    return match ? parseInt(match[1], 10) : null;
+  })();
 
-    // Extract area
-    const area = (() => {
-        const match = sentence.match(areaRegex);
-        return match ? parseInt(match[1], 10) : null;
-    })();
+  const area = (() => {
+    const match = sentence.match(areaRegex);
+    return match ? parseInt(match[1], 10) : null;
+  })();
 
-    // Extract community - try exact match first, then partial match
-    let community = (() => {
-        // First try exact regex match
-        const exactMatch = sentence.match(communityRegex);
-        if (exactMatch) return exactMatch[1];
-        
-        // Fallback to partial matching
-        const lowerSentence = sentence.toLowerCase();
-        for (const validCommunity of communities.communities) {
-            const lowerCommunity = validCommunity.toLowerCase();
-            // Check if community name appears as whole words in sentence
-            if (new RegExp(`\\b${lowerCommunity}\\b/i`).test(lowerSentence)) {
-                return validCommunity;
-            }
-            // Check if at least 50% of words match
-            const communityWords = lowerCommunity.split(/\s+/);
-            const matchingWords = communityWords.filter(word => 
-                lowerSentence.includes(word)
-            );
-            if (matchingWords.length / communityWords.length >= 0.2) {
-                return validCommunity;
-            }
-        }
-        return null;
-    })();
+  let community = (() => {
+    const exactMatch = sentence.match(communityRegex);
+    if (exactMatch) return exactMatch[1];
 
-    return {
-        rooms: rooms,
-        area: area,
-        community: community
-    };
+    const lowerSentence = sentence.toLowerCase();
+    for (const validCommunity of VALID_COMMUNITIES) {
+      const lowerCommunity = validCommunity.toLowerCase();
+
+      if (new RegExp(`\\b${lowerCommunity}\\b`, "i").test(lowerSentence)) {
+        return validCommunity;
+      }
+
+      const communityWords = lowerCommunity.split(/\s+/);
+      const matchingWords = communityWords.filter((word) =>
+        lowerSentence.includes(word)
+      );
+
+      if (matchingWords.length / communityWords.length >= 0.2) {
+        return validCommunity;
+      }
+    }
+
+    return null;
+  })();
+
+  return { rooms, area, community };
 }
 
+
 function generatePropertySearchUrl(rooms, community) {
-    let baseUrl = "https://www.rufrent.com/property/rent";
-    let params = new URLSearchParams();
-    
-    if (community) {
-        params.append("community", community);
-    }
-    
-    if (rooms) {
-        params.append("hometype", `${rooms} BHK`);
-    }
-    
-    return `${baseUrl}?${params.toString()}`;
+  let baseUrl = `${RENTALS_BASE}`;
+  let params = new URLSearchParams();
+
+  if (community) {
+    params.append("community", community);
+  }
+
+  if (rooms) {
+    params.append("hometype", `${rooms} BHK`);
+  }
+
+  return `${baseUrl}?${params.toString()}`;
 }
 
 const FormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, formErrors }) => {
@@ -254,38 +252,21 @@ const FormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, formError
   );
 };
 
-const Chatbot = ({ onClose }) => {
+const Chatbot = ({ isOpen, onClose, buttonRef }) => {
+  if (!isOpen) return null;
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    mobile: "",
-    userType: "",
-    countries: [],
-    selectedCountry: null,
-    isDropdownOpen: false,
-    searchTerm: "",
-    userTypes: [],
-    loadingUserTypes: false,
-    isSubmitting: false,
-    filteredCountries: []
-  });
-  const [formError, setFormError] = useState(null);
   const chatRef = useRef(null);
-  const isMounted = useRef(false);
 
   useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      setMessages([
-        {
-          type: "bot",
-          text: "👋 Welcome to RufRent - your one-stop solution for hassle-free renting and posting! How can I help you today?",
-        },
-      ]);
-    }
+    setMessages([
+      {
+        type: "bot",
+        text: "👋 Welcome to RufRent - your one-stop solution for hassle-free renting and posting! How can I help you today?",
+      },
+    ]);
   }, []);
 
   useEffect(() => {
@@ -297,165 +278,42 @@ const Chatbot = ({ onClose }) => {
     }
   }, [messages, isTyping]);
 
-  useEffect(() => {
-    async function fetchCountries() {
-      try {
-        const { data: countries }  = await axios.get("https://restcountries.com/v3.1/all?fields=name,cca2,flags,idd");
-        
-        const data = countries.map((country) => ({
-          name: country.name.common,
-          code: country.idd?.root + (country.idd?.suffixes?.[0] || ""),
-          flag: country.flags?.png || "",
-        }));
-        setFormData(prev => ({ ...prev, countries: data }));
-        const india = data.find((country) => country.name === "India");
-        if (india) setFormData(prev => ({ ...prev, selectedCountry: india }));
-      } catch (error) {
-        console.error("Failed to load country data:", error);
-      }
-    }
-
-    async function fetchUserTypes() {
-      try {
-        setFormData(prev => ({ ...prev, loadingUserTypes: true }));
-        const url = `${import.meta.env.VITE_API_URL}/getEnquirerCatCode`;
-        const response = await axios.get(url);
-        
-        if (response.data.success) {
-          setFormData(prev => ({ ...prev, userTypes: response.data.data }));
-        }
-      } catch (error) {
-        console.error("Failed to load user types:", error);
-      } finally {
-        setFormData(prev => ({ ...prev, loadingUserTypes: false }));
-      }
-    }
-
-    if (showForm) {
-      fetchCountries();
-      fetchUserTypes();
-    }
-  }, [showForm]);
-
-  useEffect(() => {
-    if (formData.countries.length > 0) {
-      const filtered = formData.countries.filter((country) =>
-        country.name.toLowerCase().includes(formData.searchTerm.toLowerCase())
-      );
-      setFormData(prev => ({ ...prev, filteredCountries: filtered }));
-    }
-  }, [formData.searchTerm, formData.countries]);
-
-  const formatMessage = (text, isLink = false, buttonText = "Visit Page") => {
+  const formatMessage = (text, isLink = false, buttonText = "Visit Page", isInternal = false) => {
     if (isLink) {
-      return (
-        <button
-          onClick={() => window.location.href = text}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mt-2"
+      return isInternal ? (
+        <Link
+          to={text}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 mt-2 transition"
         >
-          <span>{buttonText}</span>
-          <svg
-            className="w-4 h-4 ml-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-            />
+          {buttonText}
+          <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-        </button>
+        </Link>
+      ) : (
+        <a
+          href={text}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 mt-2 transition"
+        >
+          {buttonText}
+          <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
       );
     }
+
     return <span>{text}</span>;
   };
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    setFormError(null);
-    setFormData(prev => ({ ...prev, isSubmitting: true }));
-
-    // Validation
-    if (!formData.name || !formData.mobile || !formData.userType) {
-      setFormError("Please fill all required fields");
-      setFormData(prev => ({ ...prev, isSubmitting: false }));
-      return;
-    }
-
-    if (formData.mobile.length < 10) {
-      setFormError("Please enter a valid 10-digit mobile number");
-      setFormData(prev => ({ ...prev, isSubmitting: false }));
-      return;
-    }
-
-    try {
-      const selectedUserType = formData.userTypes.find(
-        (type) => type.category.toLowerCase() === formData.userType.toLowerCase()
-      );
-
-      if (!selectedUserType) {
-        throw new Error("Invalid user type selected");
-      }
-
-      const payload = {
-        usercat: selectedUserType.id,
-        name: formData.name,
-        country_code: formData.selectedCountry.code,
-        mobile_no: formData.mobile,         
-        status: 25,
-      };
-
-      const url = `${import.meta.env.VITE_API_URL}/addNewEnquiryRecord`;        
-      const response = await fetch(
-        url,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Request failed");
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        { type: "bot", text: "Thank you! We will contact you shortly." },
-        {
-          type: "bot",
-          text: "Back to Main Menu",
-          clickable: true,
-          key: "9",
-        },
-      ]);
-      setShowForm(false);
-      setFormData({
-        name: "",
-        mobile: "",
-        userType: "",
-        countries: [],
-        selectedCountry: null,
-        isDropdownOpen: false,
-        searchTerm: "",
-        userTypes: [],
-        loadingUserTypes: false,
-        isSubmitting: false,
-        filteredCountries: []
-      });
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      setFormError(error.message);
-    } finally {
-      setFormData(prev => ({ ...prev, isSubmitting: false }));
-    }
+  const extractRoomAndArea = (msg) => {
+    const match = msg.match(/(\d+)\s*BHK.*in\s+(.+)/i);
+    return {
+      rooms: match?.[1] || "",
+      community: match?.[2] || "",
+    };
   };
 
   const handleSendMessage = async (e) => {
@@ -467,134 +325,136 @@ const Chatbot = ({ onClose }) => {
     setIsTyping(true);
 
     try {
-      // Check for 'Favourite' keyword before classification
-      if (/favourite/i.test(inputMessage)) {
-        const intentId = 4;
-        const intent = responses.intents.find(i => i.intent_id === intentId);
-        if (intent) {
-          setMessages(prev => [...prev, {
-            type: "bot",
-            text: intent.title
-          }]);
-          if (intent.steps) {
-            intent.steps.forEach(step => {
-              setMessages(prev => [...prev, {
-                type: "bot",
-                text: step
-              }]);
-            });
-          }
-          if (intent.link) {
-            setMessages(prev => [...prev, {
-              type: "bot",
-              text: intent.link,
-              isLink: true,
-              buttonText: intent.button_text || "Visit Page"
-            }]);
-          }
-        }
-        setIsTyping(false);
-        return;
-      }
-      const response = await axios.post(`${apiUrl}/chatbot/classify`, {
+      const { data } = await axios.post(`${apiUrl}/chatbot/classify`, {
         message: inputMessage,
       });
 
-      const intentId = parseInt(response.data.predictedClass);
-      
-      if (intentId === 0) {
-        setShowForm(true);
-        setMessages(prev => [...prev, {
-          type: "bot",
-          text: "I'll help you schedule a callback. Please fill out the form below:"
-        }]);
-        setIsTyping(false);
+      const intentId = parseInt(data.predictedClass);
+      const intent = responses.intents.find((i) => i.intent_id === intentId);
+
+      if (!intent) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "bot",
+            text: "I'm not sure how to help with that. Please try again or contact support.",
+          },
+        ]);
         return;
       }
 
-      const intent = responses.intents.find(i => i.intent_id === intentId);
-      
-      if (intent) {
-        setMessages(prev => [...prev, {
-          type: "bot",
-          text: intent.title
-        }]);
-
-        if (intent.steps) {
-          intent.steps.forEach(step => {
-            setMessages(prev => [...prev, {
-              type: "bot",
-              text: step
-            }]);
-          });
-        }
-
-        if (intent.intent_id === 2) {
-          const { rooms, community } = extractRoomAndArea(inputMessage);
-          const searchUrl = generatePropertySearchUrl(rooms, community);
-          setMessages(prev => [...prev, {
+      if (intentId === 0) {
+        setShowForm(true);
+        setMessages((prev) => [
+          ...prev,
+          {
             type: "bot",
-            text: searchUrl,
-            isLink: true,
-            buttonText: intent.button_text || "Explore More Properties"
-          }]);
-        } else if (intent.link) {
-          setMessages(prev => [...prev, {
+            text: "I'll help you schedule a callback. Please fill out the form below:",
+          },
+        ]);
+        return;
+      }
+
+      // Show title
+      setMessages((prev) => [...prev, { type: "bot", text: intent.title }]);
+
+      // Show steps
+      intent.steps?.forEach((step) =>
+        setMessages((prev) => [...prev, { type: "bot", text: step }])
+      );
+
+      // Show link
+      if (intent.intent_id === 1) {
+        setMessages((prev) => [
+          ...prev,
+          {
             type: "bot",
-            text: intent.link,
+            text: `${RENTALS_BASE}/postProperties`,
             isLink: true,
-            buttonText: intent.button_text || "Visit Page"
-          }]);
-        }
-      } else {
-        setMessages(prev => [...prev, {
-          type: "bot",
-          text: "I'm not sure how to help with that. Could you please rephrase your question?"
-        }]);
+            isInternal: true,
+            buttonText: intent.button_text,
+          },
+        ]);
+      } else if (intent.intent_id === 2) {
+        const { rooms, community } = extractRoomAndArea(inputMessage);
+        const dynamicSearchUrl = generatePropertySearchUrl(rooms, community);
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "bot",
+            text: dynamicSearchUrl,
+            isLink: true,
+            isInternal: true,
+            buttonText: intent.button_text,
+          },
+        ]);
+      } else if (intent.intent_id === 3) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "bot",
+            text: `${FOOTER_PATH}/contact-us`,
+            isLink: true,
+            isInternal: true,
+            buttonText: intent.button_text,
+          },
+        ]);
+      } else if (intent.intent_id === 4) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "bot",
+            text: `${RENTALS_BASE}/myfavorites`,
+            isLink: true,
+            isInternal: true,
+            buttonText: intent.button_text,
+          },
+        ]);
       }
     } catch (error) {
-      console.error("Error sending message:", error);
-      setMessages(prev => [...prev, {
-        type: "bot",
-        text: "I apologize, but I'm having trouble processing your request right now. Please try again later."
-      }]);
+      console.error("Chatbot error:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "bot",
+          text: "Something went wrong. Please try again later.",
+        },
+      ]);
     } finally {
       setIsTyping(false);
     }
   };
 
   return (
-    <div className="fixed bottom-4 right-4 w-96 h-[600px] bg-white rounded-lg shadow-lg flex flex-col z-50">
+    <div className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 w-[85%] sm:w-96 h-[70vh] sm:h-[600px] bg-white rounded-lg shadow-lg flex flex-col z-50">
       <div className="flex justify-between items-center p-4 border-b">
         <h2 className={`${tailwindStyles.heading_2}`}>Chat with us</h2>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-        >
-          <X className="h-5 w-5" />
-        </button>
+       <button
+  onClick={onClose}
+  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+>
+  <X className="h-5 w-5" />
+</button>
       </div>
 
-      <div
-        ref={chatRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-      >
-        {messages.map((message, index) => (
+      <div ref={chatRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
               className={`max-w-[80%] rounded-lg p-3 ${
-                message.type === "user"
+                msg.type === "user"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 text-gray-800"
               }`}
             >
-              {formatMessage(message.text, message.isLink, message.buttonText)}
+              {formatMessage(msg.text, msg.isLink, msg.buttonText, msg.isInternal)}
             </div>
           </div>
         ))}
+
         {isTyping && (
           <div className="flex justify-start">
             <div className="bg-gray-100 rounded-lg p-3">
@@ -617,41 +477,18 @@ const Chatbot = ({ onClose }) => {
             placeholder="Type your message..."
             className={`${tailwindStyles.paragraph} flex-1 border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
           />
-          <button
-            type="submit"
-            className={`${tailwindStyles.secondaryButton} px-4`}
-          >
+          <button type="submit" className={`${tailwindStyles.secondaryButton} px-4`}>
             Send
           </button>
         </div>
       </form>
 
-      <FormModal
-        isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setFormData({
-            name: "",
-            mobile: "",
-            userType: "",
-            countries: [],
-            selectedCountry: null,
-            isDropdownOpen: false,
-            searchTerm: "",
-            userTypes: [],
-            loadingUserTypes: false,
-            isSubmitting: false,
-            filteredCountries: []
-          });
-          setFormError(null);
-        }}
-        onSubmit={handleFormSubmit}
-        formData={formData}
-        setFormData={setFormData}
-        formErrors={formError}
-      />
+      <FormModal isOpen={showForm} onClose={() => setShowForm(false)} />
     </div>
   );
 };
 
 export default Chatbot;
+
+
+

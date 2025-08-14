@@ -9,6 +9,7 @@ import useListingStore from "../../store/listingsStore";
 import useFilterStore from "../../store/filterStore";
 import useActionsListingsStore from "../../store/userActionsListingsStore";
 import { useRoleStore } from "../../store/roleStore";
+import { STUDIO_BASE } from "../../routes/routesPath";
 
 const StudioProfileDropdown = ({ toggleMenu }) => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const StudioProfileDropdown = ({ toggleMenu }) => {
       localStorage.clear();
 
       // Navigate to login
-      navigate("/studio", { replace: true });
+      navigate(`${STUDIO_BASE}`, { replace: true });
       window.location.reload();
     } catch (error) {
       console.error("Error during logout:", error);
@@ -56,7 +57,7 @@ const StudioProfileDropdown = ({ toggleMenu }) => {
   const handleItemClick = (path, action) => {
     setIsOpen(false);
     if (path) {
-      navigate(`/studio/${path}`);
+      navigate(`${STUDIO_BASE}/${path}`);
     } else if (action) {
       action();
     }

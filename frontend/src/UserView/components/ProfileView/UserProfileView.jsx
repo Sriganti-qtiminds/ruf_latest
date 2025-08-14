@@ -30,7 +30,7 @@ const UserProfileView = ({ userID, profile }) => {
       try {
         const [countryResponse] = await Promise.all([
           // Fetching countries and profile data concurrently
-          axios.get("https://restcountries.com/v3.1/all"),
+          axios.get("https://restcountries.com/v3.1/all?fields=name,cca2,flags,idd"),
         ]);
 
         const countryData = countryResponse.data.map((country) => ({

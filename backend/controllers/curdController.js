@@ -1,281 +1,382 @@
-const DatabaseService = require("../utils/service"); // Correct import path
-const db = require("../config/db"); // Database connection object
-const { propertyFields, fieldNames1 } = require("../utils/joins");
 require("dotenv").config();
-const BaseController = require("../utils/baseClass"); // Adjust the path as needed
+const TableInfo = require("./studio/tblInfo");
+const BaseController = require("../utils/baseClass");
 const TransactionController = require("../utils/transaction");
 
+class UniversalProcedure extends BaseController {
+  async executeProcedure(req, res = null) {
+    let {
+      jsonfilename,
+      configKey,
+      operationType,
+      fieldValues = {},
+      updatekeyvaluepairs = {},
+      whereclause = "",
+      aggregatefields = null,
+      aggregateclause = null,
+      sortfields = null,
+      sortorder = "ASC",
+    } = req.body;
 
-class addNewRecord extends BaseController {
+    const clean = (obj) => {
+      if (!obj || typeof obj !== "object") return obj;
+      const result = {};
+      for (const [key, value] of Object.entries(obj)) {
+        result[key] = value === undefined ? null : value;
+      }
+      return result;
+    };
 
+    try {
+      const tblInfo = new TableInfo();
+      const isLoaded = await tblInfo.getJsonData(jsonfilename, configKey);
+      if (!isLoaded) {
+        const err = {
+          success: false,
+          error: `Could not load config for ${configKey}`,
+        };
+        return res ? res.status(400).json(err) : err;
+      }
 
-    async addNewRecord1(req, res) {
-      const { tableName, fieldNames, fieldValues } = req.body; // Extract parameters from the request body
-  
-      try {
-        // Validate required parameters
-        if (!tableName || !fieldNames || !fieldValues) {
-          return res.status(400).json({
-            error:
-              "Missing required fields: tableName, fieldNames, or fieldValues.",
-          });
-        }
-  
-        // Call the DatabaseService to execute the stored procedure
-        const result = await this.dbService.addNewRecord(
-          tableName,
-          fieldNames,
-          fieldValues
-        );
-  
-        // Check if the insertion was successful
-        if (!result || result.affectedRows === 0) {
-          return res.status(500).json({
-            error: "Failed to add the new record.",
-          });
-        }
-  
-        // Return the result in a successful response
-        res.status(200).json({
-          message: "Record added successfully.",
-          result: result, // You can return specific fields like insertId or affectedRows
-        });
-      } catch (error) {
-        // Log and return any errors that occur during the process
-        console.error("Error adding new record:", error.message);
-        res.status(500).json({
-          error: "An error occurred while adding the new record.",
-          details: error.message, // Provide the error details for debugging
-        });
+      await tblInfo.setValues();
+      let tableName;
+      const isWriteOp = ["insert", "update", "delete"].includes(
+        operationType.toLowerCase()
+      );
+      if (isWriteOp) {
+        tableName = await tblInfo.getRawTableName();
+      } else {
+        tableName = await tblInfo.getTableName();
       }
-    }
-        async addNewRecord(req, res) {
-          const { tableName, fieldNames, fieldValues } = req.body;
-      
-          // Validate input
-          if (!tableName || !fieldNames || !fieldValues) {
-              return res.status(400).json({
-                  error: "Invalid input. Provide tableName, fieldNames, and fieldValues.",
-              });
-          }
-      
-          let connection;
-      
-          try {
-              // Step 1: Get database connection and start transaction
-              connection = await TransactionController.getConnection();
-              await TransactionController.beginTransaction(connection);
-      
-              // Step 2: Execute the addNewRecord operation
-              const result = await this.dbService.addNewRecord(tableName, fieldNames, fieldValues, connection);
-      
-              // Step 3: Check the result and commit the transaction
-              if (!result || result.affectedRows === 0) {
-                  await TransactionController.rollbackTransaction(connection, "Failed to add the new record.");
-                  return res.status(500).json({
-                      error: "Failed to add the new record.",
-                  });
-              }
-      
-              await TransactionController.commitTransaction(connection);
-      
-              // Step 4: Respond with success
-              res.status(200).json({
-                  message: "Record added successfully.",
-                  result: result, // Include result details like insertId or affectedRows
-              });
-          } catch (error) {
-              console.error("Error adding new record:", error.message);
-      
-              // Step 5: Rollback transaction on error
-              if (connection) {
-                  await TransactionController.rollbackTransaction(connection, error.message);
-              }
-      
-              // Respond with error
-              res.status(500).json({
-                  error: "An error occurred while adding the new record.",
-                  details: error.message,
-              });
-          } finally {
-              // Step 6: Release the database connection
-              if (connection) {
-                  await TransactionController.releaseConnection(connection);
-              }
-          }
+
+      const tableFields = await tblInfo.getTableFields();
+      const joinClause = await tblInfo.getTableJoinClause();
+
+      if (!tableName || !operationType) {
+        const err = {
+          success: false,
+          error: "Missing tableName or operationType",
+        };
+        return res ? res.status(400).json(err) : err;
       }
-  }
-  
-  class getRecords extends BaseController {
-  
-  
-    async getRecords(req, res) {
-      const { tableName, fieldNames, whereCondition } = req.query; // Extract parameters from query string
-  
-      try {
-        // Validate required parameters
-        if (!tableName || !fieldNames) {
-          return res.status(400).json({
-            error: "Missing required fields: tableName or fieldNames.",
-          });
-        }
-  
-        // Fetch the data using the DatabaseService
-        const results = await this.dbService.getRecordsByFields(
-          tableName,
-          fieldNames,
-          whereCondition || "" // Default to an empty string if no condition is provided
-        );
-  
-  
-        // Return the results in a successful response
-        res.status(200).json({
-          message: "Records retrieved successfully.",
-          result: results, // List of records matching the query
-        });
-      } catch (error) {
-        // Log and return any errors that occur during the process
-        console.error("Error fetching records by fields:", error.message);
-        res.status(500).json({
-          error: "An error occurred while fetching records.",
-          details: error.message, // Provide the error details for debugging
-        });
+
+      const rawResult = await this.dbServicestudio.callUniversalProcedure(
+        operationType,
+        tableName,
+        tableFields || "*",
+        clean(fieldValues),
+        clean(updatekeyvaluepairs),
+        whereclause || "",
+        sortfields || null,
+        aggregatefields || null,
+        aggregateclause || null,
+        joinClause || null,
+        sortorder
+      );
+
+      let affectedRows =
+        rawResult?.affectedRows ??
+        rawResult?.result?.affectedRows ??
+        (Array.isArray(rawResult?.result)
+          ? rawResult.result[0]?.affectedRows
+          : 0);
+
+      if (isWriteOp && affectedRows === 0) {
+        const err = {
+          success: false,
+          error: `No records affected by ${operationType} operation.`,
+          result: rawResult,
+        };
+        return res ? res.status(404).json(err) : err;
       }
+
+      const success = {
+        success: true,
+        result: rawResult.result ?? rawResult,
+      };
+
+      return res ? res.status(200).json(success) : success;
+    } catch (error) {
+      console.error("Error executing procedure:", error);
+      const err = {
+        success: false,
+        error: "An error occurred while executing the procedure.",
+        details: error.message,
+      };
+      return res ? res.status(500).json(err) : err;
     }
   }
-  
-  class updateRecord extends BaseController {
-  
-  
-    async updateRecord1(req, res) {
-      const { tableName, fieldValuePairs, whereCondition } = req.body; // Extract parameters from the request body
-  
-      try {
-        // Validate required parameters
-        if (!tableName || !fieldValuePairs) {
-          return res.status(400).json({
-            error: "Missing required fields: tableName or fieldValuePairs.",
-          });
-        }
-  
-        // Call the DatabaseService to execute the stored procedure
-        const result = await this.dbService.updateRecord(
-          tableName,
-          fieldValuePairs,
-          whereCondition || "" // Default to an empty string if no condition is provided
-        );
-  
-  
-        // Return the result in a successful response
-        res.status(200).json({
-          message: "Record updated successfully.",
-          result: result[0], // Result of the update operation
-        });
-      } catch (error) {
-        // Log and return any errors that occur during the process
-        console.error("Error updating record:", error.message);
-        res.status(500).json({
-          error: "An error occurred while updating the record.",
-          details: error.message, // Provide the error details for debugging
-        });
-      }
+}
+
+module.exports = UniversalProcedure;
+
+class AddNewRecord extends BaseController {
+  async addNewRecord(req, res) {
+    const { jsonfilename, fieldNames, fieldValues } = req.body;
+
+    if (!jsonfilename || !fieldNames || !fieldValues) {
+      return res.status(400).json({
+        error:
+          "Missing required fields: jsonfilename, fieldNames, or fieldValues.",
+      });
     }
-          async updateRecord(req, res) {
-            const { tableName, fieldValuePairs, whereCondition } = req.body; // Extract parameters from the request body
-        
-            if (!tableName || !fieldValuePairs) {
-              return res.status(400).json({
-                error: "Missing required fields: tableName or fieldValuePairs.",
-              });
-            }
-        
-            let connection;
-        
-            try {
-              // Step 1: Get database connection and start transaction
-              connection = await TransactionController.getConnection();
-              await TransactionController.beginTransaction(connection);
-        
-              // Step 2: Execute the update query
-              const result = await this.dbService.updateRecord(
-                tableName,
-                fieldValuePairs,
-                whereCondition || "", // Default to an empty condition if not provided
-                connection
-              );
-        
-              // Step 3: Commit the transaction
-              await TransactionController.commitTransaction(connection);
-        
-              // Step 4: Respond with success
-              res.status(200).json({
-                message: "Record updated successfully.",
-                result: result[0], // Result of the update operation
-              });
-            } catch (error) {
-              console.error("Error updating record:", error.message);
-        
-              // Step 5: Rollback transaction on error
-              if (connection) {
-                await TransactionController.rollbackTransaction(connection, error.message);
-              }
-        
-              // Respond with error
-              res.status(500).json({
-                error: "An error occurred while updating the record.",
-                details: error.message,
-              });
-            } finally {
-              // Step 6: Release the database connection
-              if (connection) {
-                await TransactionController.releaseConnection(connection);
-              }
-            }
-          }
-  }
-  
-  class deleteRecord extends BaseController {
-  
-  
-    async deleteRecord(req, res) {
-      const { tableName, whereCondition } = req.body;
-  
-      try {
-        if (!tableName) {
-          return res
-            .status(400)
-            .json({ error: "Missing required field: tableName." });
-        }
-        // First, check if the record exists by performing a SELECT query
-        const checkRecordExistence = await this.dbService.getRecordsByFields(
-          tableName,
-          "*",
-          whereCondition
-        );
-  
-        if (!checkRecordExistence || checkRecordExistence.length === 0) {
-          // If no records are found, return an error
-          return res.status(404).json({
-            error: `No records found`,
-          });
-        }
-  
-        const result = await this.dbService.deleteRecord(
-          tableName,
-          whereCondition || ""
-        );
-  
-  
-        res.status(200).json({
-          message: "Record(s) deleted successfully.",
-        });
-      } catch (error) {
-        console.error("Error deleting record(s):", error.message);
-        res.status(500).json({
-          error: "An error occurred while deleting the record(s).",
-          details: error.message,
-        });
+
+    let connection;
+    try {
+      const tblInfo = new TableInfo();
+      await tblInfo.getJsonData(jsonfilename);
+      await tblInfo.setValues();
+
+      const tableName = await tblInfo.getTableName();
+      if (!tableName) {
+        return res
+          .status(400)
+          .json({ error: "Invalid tableName from metadata." });
       }
+
+      connection = await TransactionController.getConnection();
+      await TransactionController.beginTransaction(connection);
+
+      const result = await this.dbService.addNewRecord(
+        tableName,
+        fieldNames,
+        fieldValues,
+        connection
+      );
+
+      if (!result || result.affectedRows === 0) {
+        await TransactionController.rollbackTransaction(connection);
+        return res.status(500).json({ error: "Failed to add the new record." });
+      }
+
+      await TransactionController.commitTransaction(connection);
+
+      res.status(200).json({
+        message: "Record added successfully.",
+        result,
+      });
+    } catch (error) {
+      if (connection)
+        await TransactionController.rollbackTransaction(connection);
+      console.error("Add record error:", error.message);
+      res.status(500).json({
+        error: "An error occurred while adding the record.",
+        details: error.message,
+      });
+    } finally {
+      if (connection) await TransactionController.releaseConnection(connection);
     }
   }
-module.exports = {addNewRecord,getRecords,updateRecord,deleteRecord};  
+}
+
+class GetRecords extends BaseController {
+  async getRecords(req, res) {
+    const { jsonfilename, fieldNames, whereCondition = "" } = req.query;
+
+    if (!jsonfilename || !fieldNames) {
+      return res.status(400).json({
+        error: "Missing required fields: jsonfilename or fieldNames.",
+      });
+    }
+
+    try {
+      const tblInfo = new TableInfo();
+      await tblInfo.getJsonData(jsonfilename);
+      await tblInfo.setValues();
+
+      const tableName = await tblInfo.getTableName();
+
+      const results = await this.dbService.getRecordsByFields(
+        tableName,
+        fieldNames,
+        whereCondition
+      );
+
+      res.status(200).json({
+        message: "Records retrieved successfully.",
+        result: results,
+      });
+    } catch (error) {
+      console.error("Fetch records error:", error.message);
+      res.status(500).json({
+        error: "An error occurred while fetching records.",
+        details: error.message,
+      });
+    }
+  }
+}
+
+class UpdateRecord extends BaseController {
+  async updateRecord(req, res) {
+    const { jsonfilename, fieldValuePairs, whereCondition = "" } = req.body;
+
+    if (!jsonfilename || !fieldValuePairs) {
+      return res.status(400).json({
+        error: "Missing required fields: jsonfilename or fieldValuePairs.",
+      });
+    }
+
+    let connection;
+    try {
+      const tblInfo = new TableInfo();
+      await tblInfo.getJsonData(jsonfilename);
+      await tblInfo.setValues();
+
+      const tableName = await tblInfo.getTableName();
+
+      connection = await TransactionController.getConnection();
+      await TransactionController.beginTransaction(connection);
+
+      const result = await this.dbService.updateRecord(
+        tableName,
+        fieldValuePairs,
+        whereCondition,
+        connection
+      );
+
+      await TransactionController.commitTransaction(connection);
+
+      res.status(200).json({
+        message: "Record updated successfully.",
+        result: result[0],
+      });
+    } catch (error) {
+      if (connection)
+        await TransactionController.rollbackTransaction(connection);
+      console.error("Update error:", error.message);
+      res.status(500).json({
+        error: "An error occurred while updating the record.",
+        details: error.message,
+      });
+    } finally {
+      if (connection) await TransactionController.releaseConnection(connection);
+    }
+  }
+}
+
+class DeleteRecord1 extends BaseController {
+  async deleteRecord(req, res) {
+    const { jsonfilename, whereCondition } = req.body;
+
+    if (!jsonfilename || !whereCondition) {
+      return res.status(400).json({
+        error: "Missing required fields: jsonfilename or whereCondition.",
+      });
+    }
+
+    let connection;
+    try {
+      const tblInfo = new TableInfo();
+      await tblInfo.getJsonData(jsonfilename);
+      await tblInfo.setValues();
+      const tableName = await tblInfo.getTableName();
+
+      connection = await TransactionController.getConnection();
+      await TransactionController.beginTransaction(connection);
+
+      const result = await this.dbService.deleteRecord(
+        tableName,
+        whereCondition,
+        connection
+      );
+
+      if (!result || result.affectedRows === 0) {
+        await TransactionController.rollbackTransaction(connection);
+        return res
+          .status(404)
+          .json({ error: "No records matched the criteria to delete." });
+      }
+
+      await TransactionController.commitTransaction(connection);
+
+      res.status(200).json({
+        message: "Record(s) deleted successfully.",
+        result,
+      });
+    } catch (error) {
+      if (connection)
+        await TransactionController.rollbackTransaction(connection);
+      console.error("Delete record error:", error.message);
+      res.status(500).json({
+        error: "An error occurred while deleting the record(s).",
+        details: error.message,
+      });
+    } finally {
+      if (connection) await TransactionController.releaseConnection(connection);
+    }
+  }
+}
+
+class DeleteRecord extends BaseController {
+  async deleteRecord(req, res) {
+    const { jsonfilename, whereCondition } = req.body;
+
+    if (!jsonfilename || !whereCondition) {
+      return res.status(400).json({
+        error: "Missing required fields: jsonfilename or whereCondition.",
+      });
+    }
+
+    let connection;
+    try {
+      const tblInfo = new TableInfo();
+      const jsonLoaded = await tblInfo.getJsonData(jsonfilename);
+      if (!jsonLoaded) {
+        return res.status(400).json({
+          error: `Could not load configuration from ${jsonfilename}.`,
+        });
+      }
+
+      await tblInfo.setValues();
+      let tableName = await tblInfo.getTableName();
+
+      // ✅ Remove alias for DELETE operations (aliases are not allowed in DELETE)
+      if (tableName.includes(" ")) {
+        tableName = tableName.split(" ")[0];
+      }
+
+      // 🔁 Get DB connection and start transaction
+      connection = await TransactionController.getConnection();
+      await TransactionController.beginTransaction(connection);
+
+      // 🔥 Perform DELETE operation
+      const result = await this.dbService.deleteRecord(
+        tableName,
+        whereCondition,
+        connection
+      );
+
+      if (!result || result.affectedRows === 0) {
+        await TransactionController.rollbackTransaction(connection);
+        return res.status(404).json({
+          error: "No records matched the criteria to delete.",
+        });
+      }
+
+      await TransactionController.commitTransaction(connection);
+
+      return res.status(200).json({
+        message: "Record(s) deleted successfully.",
+        result,
+      });
+    } catch (error) {
+      if (connection)
+        await TransactionController.rollbackTransaction(connection);
+      console.error("Delete record error:", error.message);
+      return res.status(500).json({
+        error: "An error occurred while deleting the record(s).",
+        details: error.message,
+      });
+    } finally {
+      if (connection) await TransactionController.releaseConnection(connection);
+    }
+  }
+}
+
+module.exports = {
+  UniversalProcedure,
+  AddNewRecord,
+  GetRecords,
+  UpdateRecord,
+  DeleteRecord,
+};

@@ -50,7 +50,7 @@ const EnquiryManagementDashboard = () => {
     const fetchEnquiries = async () => {
       try {
         setLoading(true);
-        const url = `${apiUrl}/getNewEnquiryRecord`; 
+        const url = `${apiUrl}/user/getNewEnquiryRecord`; 
         const response = await axios.get(url);
         setEnquiries(response.data.result);
       } catch (err) {
@@ -69,7 +69,7 @@ const EnquiryManagementDashboard = () => {
       if (modalMode !== 'edit') return;
       
       try {
-        const url = `${apiUrl}/getPostData`; 
+        const url = `${apiUrl}/user/getPostData`; 
         const response = await axios.get(url);
         setDropdownOptions(response.data.result);
       } catch (err) {
@@ -83,7 +83,7 @@ const EnquiryManagementDashboard = () => {
   // Handlers
   const handleMoreInfoClick = async (enquiry) => {
     try {
-      const url = `${apiUrl}/getNewEnquiryRecord?enq_id=${enquiry.enq_id}`; 
+      const url = `${apiUrl}/user/getNewEnquiryRecord?enq_id=${enquiry.enq_id}`; 
       const response = await axios.get(url);
       setCurrentEnquiry(response.data.result[0]);
       setModalMode("view");
@@ -134,7 +134,7 @@ const EnquiryManagementDashboard = () => {
           })
         )
       };
-      const url = `${apiUrl}/updatenq`; 
+      const url = `${apiUrl}/user/updatenq`; 
   
       await axios.put(
         url,
@@ -284,7 +284,7 @@ const EnquiryManagementDashboard = () => {
         <>
           {renderField("Rental Range Low", data.enq_rental_low)}
           {renderField("Rental Range High", data.enq_rental_high)}
-          {renderField("Parking Type", data.parking_type_name)}
+          
           {renderField("Parking Count", data.parking_count_value)}
           {renderField("Availability", data.availability_status)}
           {renderField("Super Area", data.enq_super_area)}
@@ -300,7 +300,7 @@ const EnquiryManagementDashboard = () => {
           {renderInput("enq_rental_high", "Rental Range High", 
             formChanges.enq_rental_high !== undefined ? formChanges.enq_rental_high : data.enq_rental_high, 
             "number")}
-          {renderSelect("enq_parking_type", "Parking Type", formChanges.enq_parking_type || data.enq_parking_type, dropdownOptions.parkingType)}
+          
           {renderSelect("enq_parking_count", "Parking Count", formChanges.enq_parking_count || data.enq_parking_count, dropdownOptions.parkingCounts)}
           {renderSelect("enq_available", "Availability", formChanges.enq_available || data.enq_available, dropdownOptions.availability)}
           {renderInput("enq_super_area", "Super Area", 

@@ -194,6 +194,41 @@
     <meta name="og:region" content="Telangana" />
     <meta name="og:postal-code" content="500081" />
     <meta name="og:country-name" content="India" />
+
+    <!-- Dependencies for Studio User View -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link rel="stylesheet" href="/src/index.css" />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#4f46e5',
+              secondary: '#f97316',
+              completed: '#10b981',
+              pending: '#f59e0b',
+              notstarted: '#f472b6'
+            },
+            borderRadius: {
+              'none': '0px',
+              'sm': '4px',
+              DEFAULT: '8px',
+              'md': '12px',
+              'lg': '16px',
+              'xl': '20px',
+              '2xl': '24px',
+              '3xl': '32px',
+              'full': '9999px',
+              'button': '8px'
+            }
+          }
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,6 +1,6 @@
 const cron = require("node-cron");
 const db = require("../config/db"); // Adjust the path as per your project structure
-const DatabaseService = require("../utils/service");
+const {DatabaseService,DatabaseServicestudio} = require("../utils/service");
 const dbService = new DatabaseService();
 const TransactionController = require("../utils/transaction");
 

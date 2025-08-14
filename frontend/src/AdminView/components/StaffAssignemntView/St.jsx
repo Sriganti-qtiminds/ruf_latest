@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-const apiUrl = `${import.meta.env.VITE_API_URL}`;
 
-import { fetchid, fetchRMs, fetchBuilders,fetchCities, fetchCommunities } from "./newApiServices";
+
+
+import React, { useState, useEffect } from "react";
+import { fetchid, fetchRMs, fetchBuilders, fetchCities, fetchAllCommunities, fetchDyRmFmComMapIds, updateRecord, addNewRecord, deleteRecords } from "../../../services/adminapiservices";
 import ConfirmationDialog from "./ConfirmationDialog";
 
 const St = ({ rmfm, setRmfm }) => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [cities, setCities] = useState([]);
   const [selectedCity, setSelectedCity] = useState("");
-  const [rms, setRms] = useState([]);
+  const [rms, setRms] = useState({ RMs: [], FMs: [] });
+  const [isLoadingRms, setIsLoadingRms] = useState(true);
   const [ids, setIds] = useState([]);
   const [builders, setBuilders] = useState([]);
   const [selectedBuilder, setSelectedBuilder] = useState("");
@@ -21,43 +22,60 @@ const St = ({ rmfm, setRmfm }) => {
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogAction, setDialogAction] = useState(null);
 
+  // Log rmfm, communities, and rms for debugging
+  useEffect(() => {
+    console.log("St rmfm:", rmfm);
+    console.log("St communities:", communities);
+    console.log("St rms:", rms);
+  }, [rmfm, communities, rms]);
+
   // Fetch IDs and data on mount
   useEffect(() => {
     const getIds = async () => {
       try {
         const iddata = await fetchid();
-        setIds(iddata);
-        const highestId = iddata.reduce((max, row) => (row.id > max ? row.id : max), 0);
+        setIds(Array.isArray(iddata) ? iddata : []);
+        const highestId = Array.isArray(iddata) && iddata.length > 0
+          ? iddata.reduce((max, row) => (row.id > max ? row.id : max), 0)
+          : 0;
         setMaxIdSoFar(highestId);
       } catch (error) {
         console.error("Error fetching IDs:", error);
+        setIds([]);
       }
     };
     getIds();
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const rmsData = await fetchRMs();
+  const fetchData = async () => {
+    try {
+      setIsLoadingRms(true);
+      const rmsData = await fetchRMs();
       
-        setRms(rmsData);
-         const communitiesData = await fetchCommunities();
-        setCommunities(communitiesData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-    fetchData();
-  }, []);
+      setRms(rmsData && rmsData.RMs && rmsData.FMs ? rmsData : { RMs: [], FMs: [] });
+      
+      const communitiesData = await fetchAllCommunities();
+      setCommunities(communitiesData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setRms({ RMs: [], FMs: [] });
+      setCommunities([]);
+    } finally {
+      setIsLoadingRms(false);
+    }
+  };
+  fetchData();
+}, []);
 
   useEffect(() => {
     const fetchCitie = async () => {
       try {
         const res = await fetchCities();
-        setCities(res.data.result);
+        setCities(res.data?.result || []);
       } catch (error) {
-        console.error("Error fetching cities", error);
+        console.error("Error fetching cities:", error);
+        setCities([]);
       }
     };
     fetchCitie();
@@ -71,30 +89,27 @@ const St = ({ rmfm, setRmfm }) => {
       }
       try {
         const res = await fetchBuilders(selectedCity);
-        setBuilders(res.data.result);
+        setBuilders(res.data?.result || []);
       } catch (error) {
-        console.error("Error fetching communities:", error);
+        console.error("Error fetching builders:", error);
+        setBuilders([]);
       }
     };
     fetchBuilder();
   }, [selectedCity]);
 
-
-
-  const filteredIndices = rmfm
-  .map((_, index) => index)
-  .filter(index => {
-    const record = rmfm[index];
-
-    if (editingIndex === index) return true; // Ensure the edited row stays visible
-    
-    if (selectedBuilder) {
-      return communities.some(c => c.id === record.community_id && c.builder_id === parseInt(selectedBuilder));
-    }
-
-    return true;
-  });
-
+  const filteredIndices = Array.isArray(rmfm)
+    ? rmfm
+        .map((_, index) => index)
+        .filter(index => {
+          const record = rmfm[index];
+          if (editingIndex === index) return true;
+          if (selectedBuilder) {
+            return Array.isArray(communities) && communities.some(c => c.id === record.community_id && c.builder_id === parseInt(selectedBuilder));
+          }
+          return true;
+        })
+    : [];
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -102,7 +117,7 @@ const St = ({ rmfm, setRmfm }) => {
     .slice(indexOfFirstItem, indexOfLastItem)
     .map(index => ({ ...rmfm[index], originalIndex: index }));
   const totalPages = Math.ceil(filteredIndices.length / itemsPerPage);
-  console.log("pagessssssss", totalPages)
+  console.log("pagessssssss", totalPages);
 
   const handleRowEdit = (index) => {
     setEditingIndex(editingIndex === index ? null : index);
@@ -136,18 +151,14 @@ const St = ({ rmfm, setRmfm }) => {
     setDialogMessage("Are you sure you want to delete this row?");
     setDialogAction(() => async () => {
       try {
-        const response = await axios.get(
-          `${apiUrl}/getRecords?tableName=dy_rm_fm_com_map&fieldNames=id`
-        );
-        const existingIds = response.data.result.map((user) => user.id);
+        const response = await fetchDyRmFmComMapIds();
+        const existingIds = Array.isArray(response) ? response.map(user => user.id) : [];
 
         if (existingIds.includes(rowId)) {
-          await axios.delete("http://localhost:5000/api/deleteRecord", {
-            data: {
-              tableName: "dy_rm_fm_com_map",
-              whereCondition: `id=${rowId}`,
-            },
-          });
+          const deleteResponse = await deleteRecords(rowId);
+          if (deleteResponse.status !== 200) {
+            throw new Error("Delete request failed");
+          }
         }
 
         const updatedRmfm = rmfm.filter((_, i) => i !== index);
@@ -164,79 +175,79 @@ const St = ({ rmfm, setRmfm }) => {
     setIsDialogOpen(true);
   };
 
-  const handleSave = async (index) => {
-    const newRmfm = [...rmfm];
-    const tableIndex = ids[index]?.id;
 
-    setDialogMessage("Are you sure you want to save changes?");
-    setDialogAction(() => async () => {
-      try {
-        const response = await axios.get(
-          `${apiUrl}/getRecords?tableName=dy_rm_fm_com_map&fieldNames=id`
-        );
-        const existingIds = response.data.result.map((user) => user.id);
 
-        const communityid = newRmfm[index].community_id;
-        const fmid = newRmfm[index].fm_id;
-        const rmid = newRmfm[index].rm_id;
+const safeValue = (v) => (typeof v === "string" ? `'${v}'` : v);
 
-        if (!tableIndex || !communityid || !fmid || !rmid) {
-          alert("One or more values are missing or invalid:", { tableIndex, communityid, fmid, rmid });
-          return;
-        }
 
-        if (existingIds.includes(tableIndex)) {
-          await axios.put(`${apiUrl}/updateRecord`, {
-            tableName: "dy_rm_fm_com_map",
-            fieldValuePairs: {
-              "community_id": communityid,
-              "fm_id": fmid,
-              "rm_id": rmid
-            },
-            whereCondition: `id=${tableIndex}`,
-          });
-           location.reload();
-        } else {
-          await axios.post(`${apiUrl}/addNewRecord`, {
-            tableName: "dy_rm_fm_com_map",
-            fieldNames: "id, community_id, fm_id, rm_id",
-            fieldValues: `${tableIndex}, ${communityid}, '${fmid}', '${rmid}'`,
-          });
-           location.reload();
-        }
-        setEditingIndex(null);
-        alert("Save data successfully!");
-      } catch (error) {
-        console.error("Error:", error.response?.data || error.message);
-        alert("Failed to save the data. Please try again.");
+const handleSave = async (index) => {
+  const newRmfm = [...rmfm];
+  const tableIndex = ids[index]?.id;
+
+  setDialogMessage("Are you sure you want to save changes?");
+  setDialogAction(() => async () => {
+    try {
+      const response = await fetchDyRmFmComMapIds();
+      const existingIds = Array.isArray(response) ? response.map(user => user.id) : [];
+
+      const communityid = newRmfm[index].community_id;
+      const fmid = newRmfm[index].fm_id;
+      const rmid = newRmfm[index].rm_id;
+
+      if (!tableIndex || !communityid || !fmid || !rmid) {
+        alert("One or more values are missing or invalid:", { tableIndex, communityid, fmid, rmid });
+        return;
       }
-    });
-    setIsDialogOpen(true);
-  };
+
+      if (existingIds.includes(tableIndex)) {
+        const updateResponse = await updateRecord(tableIndex, communityid, fmid, rmid);
+        if (updateResponse.status !== 200) {
+          throw new Error("Update request failed");
+        }
+        location.reload();
+      } else {
+        // Pass values as properly quoted strings
+        const addResponse = await addNewRecord(
+          safeValue(tableIndex),
+          safeValue(communityid),
+          safeValue(fmid),
+          safeValue(rmid)
+        );
+        if (addResponse.status !== 200) {
+          throw new Error("Add new record request failed");
+        }
+        location.reload();
+      }
+
+      setEditingIndex(null);
+      alert("Save data successfully!");
+    } catch (error) {
+      console.error("Error:", error.message || error);
+      alert("Failed to save the data. Please try again.");
+    }
+  });
+  setIsDialogOpen(true);
+};
 
 
   const handleBuilderChange = (builderId) => {
     setSelectedBuilder(builderId);
   };
 
-  
   const handleSelectCommunity = (e, index) => {
     const newRmfm = [...rmfm];
     newRmfm[index].community_id = e.target.value;
-    // Update community name when community is selected
-    const selectedCommunity = communities.find(c => c.id === parseInt(e.target.value));
+    const selectedCommunity = Array.isArray(communities) ? communities.find(c => c.id === parseInt(e.target.value)) : null;
     if (selectedCommunity) {
       newRmfm[index].community_name = selectedCommunity.name;
     }
     setRmfm(newRmfm);
   };
 
-
   const handleSelectRM = (e, index) => {
     const newRmfm = [...rmfm];
     newRmfm[index].rm_id = e.target.value;
-    // Update RM name when RM is selected
-    const selectedRM = rms?.RMs?.find(rm => rm.user_id === parseInt(e.target.value));
+    const selectedRM = Array.isArray(rms?.RMs) ? rms.RMs.find(rm => rm.user_id === parseInt(e.target.value)) : null;
     if (selectedRM) {
       newRmfm[index].rm_name = selectedRM.user_name;
     }
@@ -246,8 +257,7 @@ const St = ({ rmfm, setRmfm }) => {
   const handleSelectFM = (e, index) => {
     const newRmfm = [...rmfm];
     newRmfm[index].fm_id = e.target.value;
-    // Update FM name when FM is selected
-    const selectedFM = rms?.FMs?.find(fm => fm.user_id === parseInt(e.target.value));
+    const selectedFM = Array.isArray(rms?.FMs) ? rms.FMs.find(fm => fm.user_id === parseInt(e.target.value)) : null;
     if (selectedFM) {
       newRmfm[index].fm_name = selectedFM.user_name;
     }
@@ -271,30 +281,29 @@ const St = ({ rmfm, setRmfm }) => {
       <div className="px-6 pb-6">
         <div className="flex items-center gap-4 py-6 justify-between overflow-auto">
           <h2 className="text-xl font-semibold">Manager Allocation</h2>
-          <div className="flex ml-auto items-center space-x-5"> 
-
-          <select
+          <div className="flex ml-auto items-center space-x-5">
+            <select
               className="px-2 py-2 text-sm font-semibold rounded bg-gray-100 border border-gray-300"
               onChange={(e) => setSelectedCity(e.target.value)}
             >
               <option value="">Select City</option>
-              {cities?.map((item) => (
+              {Array.isArray(cities) ? cities.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
                 </option>
-              ))}
-            </select>          
+              )) : <option value="" disabled>No cities available</option>}
+            </select>
             <select
               value={selectedBuilder || ""}
               className="px-2 py-2 text-sm font-semibold rounded bg-gray-100 border border-gray-300"
               onChange={(e) => handleBuilderChange(e.target.value)}
             >
               <option value="">Select Builder</option>
-              {builders?.map((item) => (
+              {Array.isArray(builders) ? builders.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
                 </option>
-              ))}
+              )) : <option value="" disabled>No builders available</option>}
             </select>
           </div>
           <div className="flex space-x-4">
@@ -348,15 +357,15 @@ const St = ({ rmfm, setRmfm }) => {
                       {editingIndex === originalIndex ? (
                         <select
                           className="border border-gray-300 px-4 py-2 rounded"
-                          value={item.community_id}
+                          value={item.community_id || ""}
                           onChange={(e) => handleSelectCommunity(e, originalIndex)}
                         >
                           <option value="">Select Community</option>
-                          {communities?.map((community) => (
+                          {Array.isArray(communities) ? communities.map((community) => (
                             <option key={community.id} value={community.id}>
                               {community.name}
                             </option>
-                          ))}
+                          )) : <option value="" disabled>No communities available</option>}
                         </select>
                       ) : (
                         item.community_name || "Community Name"
@@ -366,15 +375,21 @@ const St = ({ rmfm, setRmfm }) => {
                       {editingIndex === originalIndex ? (
                         <select
                           className="border border-gray-300 px-4 py-2 rounded"
-                          value={item.rm_id?.toString() || ''}
+                          value={item.rm_id?.toString() || ""}
                           onChange={(e) => handleSelectRM(e, originalIndex)}
                         >
                           <option value="">Select RM</option>
-                          {rms?.RMs?.map((rm) => (
-                            <option key={rm.user_id} value={rm.user_id}>
-                              {rm.user_name}
-                            </option>
-                          ))}
+                          {isLoadingRms ? (
+                            <option value="" disabled>Loading...</option>
+                          ) : Array.isArray(rms?.RMs) && rms.RMs.length > 0 ? (
+                            rms.RMs.map((rm) => (
+                              <option key={rm.user_id} value={rm.user_id}>
+                                {rm.user_name}
+                              </option>
+                            ))
+                          ) : (
+                            <option value="" disabled>No RMs available</option>
+                          )}
                         </select>
                       ) : (
                         item.rm_name || "RM Name"
@@ -384,15 +399,21 @@ const St = ({ rmfm, setRmfm }) => {
                       {editingIndex === originalIndex ? (
                         <select
                           className="border border-gray-300 px-4 py-2 rounded"
-                          value={item.fm_id?.toString() || ''}
+                          value={item.fm_id?.toString() || ""}
                           onChange={(e) => handleSelectFM(e, originalIndex)}
                         >
                           <option value="">Select FM</option>
-                          {rms?.FMs?.map((fm) => (
-                            <option key={fm.user_id} value={fm.user_id}>
-                              {fm.user_name}
-                            </option>
-                          ))}
+                          {isLoadingRms ? (
+                            <option value="" disabled>Loading...</option>
+                          ) : Array.isArray(rms?.FMs) && rms.FMs.length > 0 ? (
+                            rms.FMs.map((fm) => (
+                              <option key={fm.user_id} value={fm.user_id}>
+                                {fm.user_name}
+                              </option>
+                            ))
+                          ) : (
+                            <option value="" disabled>No FMs available</option>
+                          )}
                         </select>
                       ) : (
                         item.fm_name || "FM Name"
@@ -448,8 +469,3 @@ const St = ({ rmfm, setRmfm }) => {
 };
 
 export default St;
-
-
-
-
-

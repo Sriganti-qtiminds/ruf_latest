@@ -7,12 +7,11 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
 
-const tablesRoutes = require("./routes/tablesRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
+const mainRoutes = require("./routes/index");
+// const notificationRoutes = require("./routes/notificationRoutes");
 const NotificationService = require("./utils/notificationService");
 const sendScheduledNotifications = require("./utils/cronjob");
 const { predict, handleCallback } = require("./utils/chatbot");
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 const DEPLOYMENT = process.env.DEPLOYMENT === "true";
@@ -55,6 +54,8 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use(express.json());
 
+// Use consistent namespace: /api/notifications (matches NotificationService)
+const notificationNamespace = io.of("/api/notifications");
 // Chatbot API endpoints
 app.post('/api/chatbot/classify', (req, res) => {
     try {
@@ -80,10 +81,6 @@ app.post('/api/chatbot/callback', (req, res) => {
         res.status(400).json({ error: error.message });
     }
 });
-
-// Use consistent namespace: /api/notifications (matches NotificationService)
-const notificationNamespace = io.of("/api/notifications");
-
 notificationNamespace.on("connection", (socket) => {
   console.log(
     `User connected to /api/notifications with socket ID: ${socket.id}`
@@ -141,8 +138,8 @@ notificationNamespace.on("connection", (socket) => {
 sendScheduledNotifications(io, onlineUsers);
 
 // Routes
-app.use("/api", tablesRoutes);
-app.use("/api/noti", notificationRoutes(io, onlineUsers));
+app.use("/api", mainRoutes);
+//app.use("/api/noti", notificationRoutes(io, onlineUsers));
 
 // Start the server
 server.listen(PORT, () => {

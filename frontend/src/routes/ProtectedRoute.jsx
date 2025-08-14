@@ -1,33 +1,49 @@
+
 import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import Cookies from "js-cookie";
 import { useRoleStore } from "../store/roleStore";
 
-const ProtectedRoute = ({ roles }) => {
-  const { userData } = useRoleStore();
+const jwtSecretKey = `${import.meta.env.VITE_JWT_SECRET_KEY}`;
 
-  // Redirect to home if no role
-  if (!userData?.role) {
+const ProtectedRoute = ({ roles, setIntendedPath, setIsModalOpen }) => {
+  const { userData } = useRoleStore();
+  const location = useLocation();
+  const jwtToken = Cookies.get(jwtSecretKey);
+  const isLogin = !!jwtToken;
+
+  console.log("ProtectedRoute - isLogin:", isLogin, "userData:", userData, "location:", location.pathname);
+
+  // If user is not logged in, redirect to landing page and open login modal
+  if (!isLogin || !userData?.role) {
+    console.log("Redirecting to / due to no login or no role");
+    setIntendedPath(location.pathname);
+    setIsModalOpen(true);
     return <Navigate to="/" replace />;
   }
 
-  // Match user role with allowed roles
+  // Normalize user role
+  const normalizedRole = userData.role ? userData.role.toLowerCase() : null;
   const userRole =
-    userData.role.toLowerCase() === "user"
+    normalizedRole === "user" || normalizedRole === "USER"
       ? "User"
-      : userData.role.toLowerCase() === "rm"
-        ? "RM"
-        : userData.role.toLowerCase() === "fm"
-          ? "FM"
-          : userData.role.toLowerCase() === "admin"
-            ? "Admin"
-            : null;
+      : normalizedRole === "rm"
+      ? "RM"
+      : normalizedRole === "fm"
+      ? "FM"
+      : normalizedRole === "admin"
+      ? "Admin"
+      : null;
+
+  console.log("ProtectedRoute - userRole:", userRole, "allowed roles:", roles);
 
   if (!roles.includes(userRole)) {
+    console.log("Redirecting to /unauthorize - role not allowed");
     return <Navigate to="/unauthorize" replace />;
   }
 
-  // Render nested routes or a specific component
   return <Outlet />;
 };
 
 export default ProtectedRoute;
+

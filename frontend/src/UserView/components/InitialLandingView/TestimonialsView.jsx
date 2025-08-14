@@ -1,5 +1,9 @@
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { FaStar } from 'react-icons/fa';
+import { useLocation } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import AuthModal from '../../../components/CommonViews/AuthModalView';
 import { addNewTestimonial, getTestimonials, fetchFiltersData } from '../../../services/newapiservices';
@@ -10,6 +14,7 @@ const jwtSecretKey = `${import.meta.env.VITE_JWT_SECRET_KEY}`;
 
 const TestimonialsView = () => {
   const { userData } = useRoleStore();
+  
   const [loginOpen, setLoginOpen] = useState(false);
   const [review, setReview] = useState('');
   const [rating, setRating] = useState(5);
@@ -43,7 +48,11 @@ const TestimonialsView = () => {
 
   const MIN_REVIEW_LENGTH = 80;
 
-  
+  // Determine project_category based on active tab
+  const getProjectCategory = () => {
+    return location.pathname === '/studio' ? '2' : '1'; // Studio: 2, Rentals: 1
+  };
+
   useEffect(() => {
     const fetchTestimonials = async () => {
       try {
@@ -66,7 +75,6 @@ const TestimonialsView = () => {
             ? 'No approved testimonials available.'
             : 'Unable to load testimonials due to a server error. Please try again later.'
         );
-        
       }
     };
 
@@ -268,6 +276,7 @@ const TestimonialsView = () => {
         city_id: selectedCity,
         builder_id: selectedBuilder,
         community_id: selectedCommunity,
+        project_category: getProjectCategory(), // Include project_category based on active tab
       };
 
       await addNewTestimonial(testimonialData, profileImage);
@@ -317,7 +326,6 @@ const TestimonialsView = () => {
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl w-full mx-auto">
-        {/* <h2 className={""}>Our Clients' Experiences</h2> */}
         <h2 className={`${tailwindStyles.heading_1}`}>Our Client's Experiences</h2>
         {fetchError && (
           <div className="text-center text-red-500 mb-6">{fetchError}</div>
@@ -368,7 +376,7 @@ const TestimonialsView = () => {
                           {testimonial.city || testimonial.builder || testimonial.community ? (
                             <>
                               {testimonial.city && `${testimonial.city}`}
-                              {testimonial.city && (testimonial.builder || testimonial.community) && ' | '}                              
+                              {testimonial.city && (testimonial.builder || testimonial.community) && ' | '}
                               {testimonial.community && `Community: ${testimonial.community}`}
                             </>
                           ) : (
@@ -717,7 +725,7 @@ const TestimonialsView = () => {
       `}</style>
       <AuthModal
         isOpen={loginOpen}
-        onClose={() => setLoginOpen(false)}        
+        onClose={() => setLoginOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
     </div>
@@ -725,6 +733,3 @@ const TestimonialsView = () => {
 };
 
 export default TestimonialsView;
-
-
-

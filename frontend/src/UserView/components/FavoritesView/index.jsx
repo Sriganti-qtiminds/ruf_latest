@@ -8,7 +8,7 @@ import { useRoleStore } from "../../../store/roleStore";
 
 import FavouritesCard from "./FavouritesCardView";
 import PropertyListingSkeletonLoader from "../../../components/CommonViews/PropertyCardSkelton";
-
+import { RENTALS_BASE } from "../../../routes/routesPath";
 const FavoritesView = () => {
   const navigate = useNavigate();
 
@@ -103,7 +103,7 @@ const FavoritesView = () => {
                   />
                 );
               })
-            : navigate("/property/rent")}
+            : navigate(`${RENTALS_BASE}`)}
         </div>
       </main>
     </div>

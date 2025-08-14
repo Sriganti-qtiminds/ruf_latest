@@ -1,11 +1,9 @@
-
-// export default ImageModal;
-
 import React from "react";
 
-const ImageModal = ({ isOpen, room, imageIndex, category, closeModal }) => {
-  if (!isOpen || !room) return null;
+const ImageModal = ({ isOpen, roomIndex, imageIndex, rooms, closeModal }) => {
+  if (!isOpen || roomIndex === null) return null;
 
+  const room = rooms[roomIndex];
   const [currentImageIndex, setCurrentImageIndex] = React.useState(imageIndex);
 
   const handleThumbnailClick = (index) => {
@@ -20,23 +18,18 @@ const ImageModal = ({ isOpen, room, imageIndex, category, closeModal }) => {
     >
       <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl w-full max-w-[95%] sm:max-w-4xl max-h-[90vh] flex flex-col sm:flex-row overflow-hidden relative m-4 sm:m-0 transition-transform duration-300">
         {/* Main Image */}
-        <div className="flex-1 p-4 sm:p-6 relative">
+        <div className="flex-1 p-4 sm:p-6">
           <img
-            src={room.images[currentImageIndex].url}
-            alt={`${room.title} ${room.images[currentImageIndex].category} Image ${room.images[currentImageIndex].index + 1}`}
+            src={room.images[currentImageIndex]}
+            alt={`${room.title} Image ${currentImageIndex + 1}`}
             className="w-full h-[40vh] md:h-full object-contain rounded-lg"
           />
-          {/* Category Label for Main Image */}
-          <span className="absolute top-4 left-4 text-sm font-medium text-white bg-gradient-to-br from-[#E07A5F] to-[#7C9A92] px-3 py-1 rounded-full">
-            {room.images[currentImageIndex].category.charAt(0).toUpperCase() +
-              room.images[currentImageIndex].category.slice(1)}
-          </span>
         </div>
         {/* Thumbnails */}
-        <div className="flex-none w-full md:w-64 p-4 overflow-y-auto flex flex-row sm:flex-col gap-2 sm:gap-3">
+        <div className="flex-none w-full  md:w-64 p-4 overflow-y-auto flex flex-row sm:flex-col gap-2 sm:gap-3">
           {room.images.map((img, index) => (
             <div
-              key={`${img.category}-${img.index}`}
+              key={index}
               className={`flex-none w-24 sm:w-full aspect-[3/2] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.1)] ${
                 index === currentImageIndex
                   ? "border-2 border-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.2)]"
@@ -44,20 +37,11 @@ const ImageModal = ({ isOpen, room, imageIndex, category, closeModal }) => {
               }`}
               onClick={() => handleThumbnailClick(index)}
             >
-              <div className="relative w-full h-full">
-                <img
-                  src={img.url}
-                  alt={`${room.title} ${img.category} Thumbnail ${img.index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-                {/* Category Label for Thumbnail */}
-                {/* <span className="absolute top-2 left-2 text-xs font-medium text-white bg-gradient-to-br from-[#E07A5F] to-[#7C9A92] px-2 py-0.5 rounded-full">
-                  {img.category.charAt(0).toUpperCase() + img.category.slice(1)}
-                </span> */}
-                <span className="absolute top-2 left-2 text-xs font-medium text-white bg-gradient-to-br from-black to-black/30 px-2 py-0.5 rounded-full">
-                  {img.category.charAt(0).toUpperCase() + img.category.slice(1)}
-                </span>
-              </div>
+              <img
+                src={img}
+                alt={`${room.title} Thumbnail ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
             </div>
           ))}
         </div>
