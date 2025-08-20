@@ -303,7 +303,7 @@ const PropertyListingCard = ({ property }) => {
           <div className="grid grid-cols-6 gap-2">
             {amenities.map((amenity, index) => (
               <div key={index} className="flex items-center gap-2">
-                <img src="ammenity/home_2.png" className="w-3 h-3" alt="amenity" />
+                <img src="/ammenity/home_2.png" className="w-3 h-3" alt="amenity" />
                 <span className="text-[9px]">{amenity}</span>
               </div>
             ))}

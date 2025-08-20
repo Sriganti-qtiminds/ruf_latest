@@ -124,12 +124,21 @@ class testimonialController extends BaseController {
 
     await TransactionController.commitTransaction(connection);
 
-    // ✅ Step 6: Update Redis
-    const redisKey = "testimonial_records";
-    const cached = await redis.get(redisKey);
-    const testimonials = cached ? JSON.parse(cached) : [];
-    const newTestimonial = { id: insertId, ...fieldValues };
-    await redis.set(redisKey, JSON.stringify([...testimonials, newTestimonial]));
+//Step 6: Update Redis
+const redisKey = "testimonial_records";
+const cached = await redis.get(redisKey);
+let testimonials = cached ? JSON.parse(cached) : [];
+
+const newTestimonial = { id: insertId, ...fieldValues };
+
+// Only add to cache if approved (status = 3)
+if (newTestimonial.current_status == 3) {
+  testimonials.push(newTestimonial);
+}
+
+// Save updated list back to Redis
+await redis.set(redisKey, JSON.stringify(testimonials), "EX", 3600);
+
 
     return res.status(201).json({
       success: true,
@@ -157,39 +166,45 @@ class testimonialController extends BaseController {
 }
 async getNewtestimonialRecord(req, res) {
   const { id } = req.query;
-  const redisKey = "testimonial_records"; // Should match the one in metadata.json
+  const redisKey = "testimonial_records"; 
   const curd = new CurdController.UniversalProcedure();
 
   try {
-    // Step 1: Try Redis cache
     let cached = await redis.get(redisKey);
+
     if (cached) {
       const parsed = JSON.parse(cached);
-      const filtered = parsed.filter(item => item.current_status == 3 && (!id || item.id == id));
+      const filtered = parsed.filter(
+        item => item.current_status == 3 && (!id || item.id == id)
+      );
 
-      if (id && filtered.length === 0) {
-        return res.status(404).json({
-          error: "No testimonial found for the provided ID (from cache)."
+      if (filtered.length > 0) {
+        console.log(`Returning ${filtered.length} testimonials from cache`);
+        return res.status(200).json({
+          message: "Testimonial data retrieved from cache successfully.",
+          result: filtered
         });
+      } else {
+        console.log("No matching testimonials in cache — refreshing from DB...");
       }
-
-      return res.status(200).json({
-        message: "Testimonial data retrieved from cache successfully.",
-        result: filtered
-      });
+    } else {
+      console.log(" Cache empty — fetching from DB...");
     }
 
-    // Step 2: Fallback to DB using UniversalProcedure
-    const whereCondition = `dyt.current_status = 3${id ? ` AND dyt.id = ${db.escape(id)}` : ""}`;
+    // --- Step 2: Query DB ---
+    const whereCondition = `dyt.current_status = 3${
+      id ? ` AND dyt.id = ${db.escape(id)}` : ""
+    }`;
 
     req.body = {
       jsonfilename: "rooms_info.json",
-      configKey: "testimonial_info", // 👈 this must match the key in metadata.json
+      configKey: "testimonial_info",
       operationType: "select",
       whereclause: whereCondition
     };
 
-    const dbResponse = await curd.executeProcedure(req,res);
+    const dbResponse = await curd.executeProcedure(req, res);
+    console.log(" DB Response:", dbResponse?.result);
 
     if (!dbResponse || !dbResponse.result || dbResponse.result.length === 0) {
       return res.status(404).json({
@@ -212,35 +227,34 @@ async getNewtestimonialRecord(req, res) {
       phone: item.mobile_no
     }));
 
-    // Step 3: Save to Redis for future use
-    await redis.set(redisKey, JSON.stringify(dbResponse.result), "EX", 3600); // 1 hour
+    // --- Step 3: Save fresh results to Redis ---
+    await redis.set(redisKey, JSON.stringify(dbResponse.result), "EX", 3600);
 
     return res.status(200).json({
       message: "Testimonial data retrieved from database successfully.",
       result
     });
-  }catch (error) {
-  console.error("Error adding testimonial:", error.message);
 
- 
+  } catch (error) {
+    console.error("Error fetching testimonials:", error.message);
 
-  // ✅ Only respond if no response was sent earlier
-  if (!res.headersSent) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to add testimonial entry.",
-      error: error.message
-    });
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to get testimonial data.",
+        error: error.message
+      });
+    }
   }
 }
-}
+
 async getAllTestimonialRecords(req, res) {
   const { id } = req.query;
   const redisKey = "testimonial_records";
   const curd = new CurdController.UniversalProcedure();
 
   try {
-    // ✅ Case 1: Check Redis Cache (only if `id` is passed and no other filters)
+    //  Case 1: Check Redis Cache (only if `id` is passed and no other filters)
     if (id) {
       const cached = await redis.get(redisKey);
       if (cached) {

@@ -1,10 +1,14 @@
-import React from "react";
 
-const ImageModal = ({ isOpen, roomIndex, imageIndex, rooms, closeModal }) => {
-  if (!isOpen || roomIndex === null) return null;
+import React, { useState, useEffect } from "react";
 
-  const room = rooms[roomIndex];
-  const [currentImageIndex, setCurrentImageIndex] = React.useState(imageIndex);
+const ImageModal = ({ isOpen, room, imageIndex, closeModal }) => {
+  if (!isOpen || !room) return null;
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(imageIndex);
+
+  useEffect(() => {
+    setCurrentImageIndex(imageIndex);
+  }, [imageIndex, room]);
 
   const handleThumbnailClick = (index) => {
     setCurrentImageIndex(index);
@@ -20,17 +24,21 @@ const ImageModal = ({ isOpen, roomIndex, imageIndex, rooms, closeModal }) => {
         {/* Main Image */}
         <div className="flex-1 p-4 sm:p-6">
           <img
-            src={room.images[currentImageIndex]}
-            alt={`${room.title} Image ${currentImageIndex + 1}`}
+            src={room.images[currentImageIndex].url}
+            alt={`${room.title} ${room.images[currentImageIndex].category} Image ${currentImageIndex + 1}`}
             className="w-full h-[40vh] md:h-full object-contain rounded-lg"
           />
+          <p className="text-center mt-2 text-white text-sm">
+            {room.images[currentImageIndex].description}
+          </p>
         </div>
+
         {/* Thumbnails */}
-        <div className="flex-none w-full  md:w-64 p-4 overflow-y-auto flex flex-row sm:flex-col gap-2 sm:gap-3">
+        <div className="flex-none w-full md:w-64 p-4 overflow-y-auto flex flex-row sm:flex-col gap-2 sm:gap-3">
           {room.images.map((img, index) => (
             <div
               key={index}
-              className={`flex-none w-24 sm:w-full aspect-[3/2] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 shadow-[2px_2px_5px_rgba(0,0,0,0.1),-2px_-2px_5px_rgba(255,255,255,0.1)] ${
+              className={`flex-none w-24 sm:w-full aspect-[3/2] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${
                 index === currentImageIndex
                   ? "border-2 border-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.2)]"
                   : "hover:scale-105 hover:shadow-[0_0_10px_rgba(251,191,36,0.3)]"
@@ -38,13 +46,14 @@ const ImageModal = ({ isOpen, roomIndex, imageIndex, rooms, closeModal }) => {
               onClick={() => handleThumbnailClick(index)}
             >
               <img
-                src={img}
+                src={img.url}
                 alt={`${room.title} Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
               />
             </div>
           ))}
         </div>
+
         {/* Close Button */}
         <div
           className="absolute top-3 right-3 bg-black/50 text-white w-10 h-10 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300 hover:bg-black/70 hover:scale-110"

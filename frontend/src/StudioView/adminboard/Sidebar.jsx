@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { STUDIO_BASE } from '../../routes/routesPath';
 
 const SIDEBAR_WIDTH = 320;
 
@@ -44,6 +46,7 @@ const navItemBaseStyle = {
 
 const navItems = [
   { label: 'Dashboard', icon: 'ri-dashboard-line' },
+  { label: 'Requests', icon: 'ri-git-pull-request-line' },
   { label: 'Projects', icon: 'ri-folder-line' },
   { label: 'Finance', icon: 'ri-money-dollar-circle-line' },
   { label: 'Vendors', icon: 'ri-store-line' },
@@ -53,6 +56,7 @@ const navItems = [
 ];
 
 const smNavItems = [
+  { label: 'Requests', icon: 'ri-git-pull-request-line' },
   { label: 'Projects', icon: 'ri-folder-line' },
 ];
 
@@ -71,7 +75,7 @@ function Sidebar({ selected, setSelected, role, isOpen, onToggle }) {
     }
     return style;
   };
-
+  const navigate = useNavigate();
   let itemsToShow = [];
   if (role === 'admin') {
     itemsToShow = navItems;
@@ -80,6 +84,10 @@ function Sidebar({ selected, setSelected, role, isOpen, onToggle }) {
   } else {
     return null;
   }
+  const onClickMain = () => {
+    navigate("/");
+    console.log("Navbar: Navigated to / via logo");
+  };
 
   const currentSidebarStyle = window.innerWidth <= 768 
     ? { 
@@ -112,7 +120,18 @@ function Sidebar({ selected, setSelected, role, isOpen, onToggle }) {
         )}
         
         <div style={{ fontWeight: 'bold', fontSize: '2rem', marginBottom: '32px', paddingLeft: '32px' }}>
-          Rufrent Studio
+          <button
+            onClick={()=> navigate(`${STUDIO_BASE}`)}
+  	     style={{ 
+			background: 'none', 
+			border: 'none', 
+			color: 'inherit', 
+			cursor: 'pointer' 
+		  }}
+>
+  Rufrent Studio
+
+          </button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', paddingRight: '16px' }}>
           {itemsToShow.map((item) => {

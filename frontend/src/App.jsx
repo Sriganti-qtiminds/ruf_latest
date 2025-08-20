@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
+
 // Route Constants
 import {
   ADMIN_BASE,
@@ -67,10 +68,9 @@ import StudioUserLayout from "./StudioView/layout/StudioUserLayout";
 import StudioLandingView from "./StudioView/components/InitialLandingView";
 import StudioDashboard from "./StudioView/components/InitialLandingView/StudioDashboard";
 import ProjectStatus from "./StudioView/components/ProjectStatus";
-import AdminBoard from "./StudioView/adminboard/AdminBoard";
 
 import "./App.css";
-import AdminPanel from "./AdminView/components/RequestsView/AdminPanel";
+import AdminBoard from "./StudioView/adminboard/AdminBoard";
 
 const App = () => {
   const navigate = useNavigate();
@@ -118,11 +118,15 @@ const App = () => {
         </Route>
 
         {/* User Routes */}
-        <Route
-          element={<ProtectedRoute roles={["User", "Admin", "RM", "FM"]} {...passProps} />}
-        >
-          <Route path={`${RENTALS_BASE}`} element={<UserLayout {...passProps} />}>
-            <Route index element={<UserLandingView />} />
+    
+        <Route path={`${RENTALS_BASE}`} element={<UserLayout {...passProps} />}>
+
+          <Route index element={<UserLandingView />} />
+
+          {/* Protect only the specific child routes */}
+          <Route
+            element={<ProtectedRoute roles={["User", "Admin", "RM", "FM"]} {...passProps} />}
+          >
             <Route path="mylistings" element={<MyListingsView />} />
             <Route path="postProperties" element={<PostPropertiesView />} />
             <Route path="myfavorites" element={<FavoritesView />} />
@@ -132,6 +136,7 @@ const App = () => {
           </Route>
         </Route>
 
+
         {/* Common Routes */}
         <Route
           element={<ProtectedRoute roles={["RM", "Admin"]} {...passProps} />}
@@ -139,9 +144,9 @@ const App = () => {
           <Route path={ENQUIRIES_PATH} element={<EnquiriesView />} />
         </Route>
         <Route element={<ProtectedRoute roles={["Admin"]}/>}>
-          <Route path={"/base/studio/AdminBoard"} element={<AdminBoard />} />
+          <Route path={"/base/studio/AdminBoard"} element={<AdminBoard/>} />
         </Route>
-        {/* <Route path="/base/studio/AdminBoard" element={<AdminBoard />} /> */}
+
         {/* RM Route */}
         <Route element={<ProtectedRoute roles={["RM"]} {...passProps} />}>
           <Route path={RM_BASE} element={<RMView />} />

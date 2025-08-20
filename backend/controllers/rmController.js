@@ -71,7 +71,7 @@ class addRmTask extends BaseController {
 }
 
 class TaskController extends BaseController {
-  async getTasks(req, res) {
+async getTasks(req, res) {
   try {
     const { rm_id, fm_id, community_id } = req.query;
 
@@ -105,7 +105,7 @@ class TaskController extends BaseController {
       u1.mobile_no AS tenant_mobile,
       u1.email_id AS tenant_email,
       dt.tr_st_time AS rec_st_time,
-      dt.cur_stat_code AS curr_stat_code_id,
+      dt.cur_stat_code AS curr_stat_code_id,  -- still return alias
       cs.status_code AS curr_stat_code,
       dt.schedule_date AS schedule_date,
       dt.schedule_time AS schedule_time,
@@ -115,12 +115,13 @@ class TaskController extends BaseController {
       fm_user.user_name AS fm_name
     `;
 
-    const conditions = [];
+    // ✅ Use actual column name for filtering
+    const conditions = ["dt.cur_stat_code <> 30"];
     if (rm_id) conditions.push(`rm_map.rm_id = ${db.escape(rm_id)}`);
     if (fm_id) conditions.push(`rm_map.fm_id = ${db.escape(fm_id)}`);
     if (community_id) conditions.push(`c.id = ${db.escape(community_id)}`);
 
-    const whereCondition = conditions.length > 0 ? conditions.join(" AND ") : "1 = 1";
+    const whereCondition = conditions.join(" AND ");
 
     const taskResults = await this.dbService.getJoinedData(
       mainTable,
@@ -129,12 +130,12 @@ class TaskController extends BaseController {
       whereCondition
     );
 
-    // Fetch status data
-    const statusCondition = rm_id
-      ? 'status_category="RMA" OR status_category="FMA"'
-      : fm_id
-      ? 'status_category="FMA"'
-      : "1 = 1"; // Fetch all statuses if no IDs are provided
+    const statusCondition =
+      rm_id
+        ? 'status_category="RMA" OR status_category="FMA"'
+        : fm_id
+        ? 'status_category="FMA"'
+        : "1 = 1";
 
     const statusResults = await this.dbService.getRecordsByFields(
       "st_current_status",
@@ -142,7 +143,6 @@ class TaskController extends BaseController {
       statusCondition
     );
 
-    // If rm_id is provided, fetch associated properties
     let associatedProperties = [];
     if (rm_id) {
       const communityResults = await this.dbService.getRecordsByFields(
@@ -151,7 +151,7 @@ class TaskController extends BaseController {
         `rm_id = ${db.escape(rm_id)}`
       );
 
-      const communityIds = communityResults.map((row) => row.community_id);
+      const communityIds = communityResults.map(row => row.community_id);
 
       if (communityIds.length > 0) {
         const propertyTable = "dy_property dy";
@@ -168,7 +168,10 @@ class TaskController extends BaseController {
           u2.user_name AS tenant_name,
           u2.mobile_no AS tenant_mobile
         `;
-        const propertyCondition = `dy.community_id IN (${communityIds.join(", ")})`;
+        const propertyCondition = `
+          dy.community_id IN (${communityIds.join(", ")})
+          AND (dt.cur_stat_code IS NULL OR dt.cur_stat_code <> 30)
+        `;
 
         associatedProperties = await this.dbService.getJoinedData(
           propertyTable,
@@ -179,13 +182,13 @@ class TaskController extends BaseController {
       }
     }
 
-    // Send response
-    return res.status(200).json({
+    res.status(200).json({
       message: "Data retrieved successfully.",
       result: taskResults,
       status: statusResults,
-      associatedProperties: associatedProperties,
+      associatedProperties,
     });
+
   } catch (error) {
     console.error("Error in getTasks:", error);
     res.status(500).json({

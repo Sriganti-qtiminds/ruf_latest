@@ -103,7 +103,7 @@ const FavoritesView = () => {
                   />
                 );
               })
-            : navigate(`${RENTALS_BASE}`)}
+            : navigate(`${RENTALS_BASE}/myfavorites`)}
         </div>
       </main>
     </div>

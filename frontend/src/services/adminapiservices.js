@@ -1,4 +1,3 @@
-
 import axios from "axios";
 import {
   fetchDashboardDataApi,
@@ -35,7 +34,10 @@ export const fetchCities = async () => {
     console.log("fetchCities response:", response.data);
     return response;
   } catch (error) {
-    console.error("Error fetching cities:", error.response?.data || error.message);
+    console.error(
+      "Error fetching cities:",
+      error.response?.data || error.message
+    );
     return [];
   }
 };
@@ -65,7 +67,10 @@ export const fetchBuilders = async (cityId) => {
     console.log("fetchBuilders response:", response.data);
     return response;
   } catch (error) {
-    console.error("Error fetching builders:", error.response?.data || error.message);
+    console.error(
+      "Error fetching builders:",
+      error.response?.data || error.message
+    );
     return { result: [] };
   }
 };
@@ -86,7 +91,10 @@ export const fetchCommunities = async (builderId) => {
     console.log("fetchCommunities response:", response.data);
     return response;
   } catch (error) {
-    console.error("Error fetching communities:", error.response?.data || error.message);
+    console.error(
+      "Error fetching communities:",
+      error.response?.data || error.message
+    );
     return { result: [] };
   }
 };
@@ -99,14 +107,17 @@ export const fetchAllCommunities = async () => {
     const response = await axios.get(url, {
       params: {
         tableName: "st_community",
-        fieldNames: "id,name",
+        fieldNames: "id,name,builder_id",
         whereCondition: "rstatus=1",
       },
     });
     console.log("fetchAllCommunities response:", response.data);
     return response.data?.result || [];
   } catch (error) {
-    console.error("Error fetching all communities:", error.response?.data || error.message);
+    console.error(
+      "Error fetching all communities:",
+      error.response?.data || error.message
+    );
     return [];
   }
 };
@@ -183,7 +194,12 @@ export const fetchRecords = async (page = 1, perPage = 10, filters = {}) => {
       data: {
         result: [],
         status: [],
-        pagination: { currentPage: page, totalPages: 1, totalRecords: 0, limit: perPage },
+        pagination: {
+          currentPage: page,
+          totalPages: 1,
+          totalRecords: 0,
+          limit: perPage,
+        },
       },
     };
   }
@@ -194,7 +210,7 @@ export const fetchRmFms = async () => {
     const url = buildApiUrl("/staffDetails", "user");
     console.log("Fetching RM/FM details from:", url);
     const response = await axios.get(url);
-    console.log("fetchRmFms response:", response.data);
+    console.log("fetchRmsressssssssss:", response.data);
     return response;
   } catch (error) {
     console.error("Error fetching RM/FM details:", error);
@@ -294,7 +310,10 @@ export const fetchAmenityCategories = async () => {
     console.log("fetchAmenityCategories response:", response.data);
     return response;
   } catch (error) {
-    console.error("Error fetching amenity categories:", error.response?.data || error.message);
+    console.error(
+      "Error fetching amenity categories:",
+      error.response?.data || error.message
+    );
     return [];
   }
 };
@@ -303,14 +322,22 @@ export const fetchAmenityCategories = async () => {
 export const fetchAmenities = async (communityId, categoryId) => {
   if (!communityId || !categoryId) return [];
   try {
-    const encodedWhereCondition = encodeURIComponent(`rstatus=1 AND amenity_category_id=${categoryId}`);
-    const url = buildApiUrl(`/getRecords?tableName=st_amenities&fieldNames=id,amenity_name&whereCondition=${encodedWhereCondition}`, "crud");
+    const encodedWhereCondition = encodeURIComponent(
+      `rstatus=1 AND amenity_category_id=${categoryId}`
+    );
+    const url = buildApiUrl(
+      `/getRecords?tableName=st_amenities&fieldNames=id,amenity_name&whereCondition=${encodedWhereCondition}`,
+      "crud"
+    );
     console.log("Fetching amenities from:", url);
     const response = await axios.get(url);
     console.log("fetchAmenities response:", response.data);
     return response.data.result || [];
   } catch (error) {
-    console.error("Error fetching amenities:", error.response?.data || error.message);
+    console.error(
+      "Error fetching amenities:",
+      error.response?.data || error.message
+    );
     return [];
   }
 };
@@ -330,7 +357,10 @@ export const fetchLandmarkCategories = async () => {
     console.log("fetchLandmarkCategories response:", response.data);
     return response.data.result || [];
   } catch (error) {
-    console.error("Error fetching landmark categories:", error.response?.data || error.message);
+    console.error(
+      "Error fetching landmark categories:",
+      error.response?.data || error.message
+    );
     return [];
   }
 };
@@ -349,7 +379,10 @@ export const createCommunity = async (communityData, imageFile) => {
     console.log("createCommunity response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error creating community:", error.response?.data || error.message);
+    console.error(
+      "Error creating community:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -363,7 +396,10 @@ export const addAmenities = async (payload) => {
     console.log("addAmenities response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error adding amenities:", error.response?.data || error.message);
+    console.error(
+      "Error adding amenities:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -377,7 +413,10 @@ export const addLandmarks = async (payload) => {
     console.log("addLandmarks response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error adding landmarks:", error.response?.data || error.message);
+    console.error(
+      "Error adding landmarks:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -385,13 +424,19 @@ export const addLandmarks = async (payload) => {
 // Import amenities
 export const importAmenities = async (sourceCommunityId, targetCommunityId) => {
   try {
-    const url = buildApiUrl(`/importamenities?source_community_id=${sourceCommunityId}&target_community_id=${targetCommunityId}`, "user");
+    const url = buildApiUrl(
+      `/importamenities?source_community_id=${sourceCommunityId}&target_community_id=${targetCommunityId}`,
+      "user"
+    );
     console.log("Importing amenities from:", url);
     const response = await axios.post(url);
     console.log("importAmenities response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error importing amenities:", error.response?.data || error.message);
+    console.error(
+      "Error importing amenities:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -399,13 +444,19 @@ export const importAmenities = async (sourceCommunityId, targetCommunityId) => {
 // Import landmarks
 export const importLandmarks = async (sourceCommunityId, targetCommunityId) => {
   try {
-    const url = buildApiUrl(`/importLandmarks?source_community_id=${sourceCommunityId}&target_community_id=${targetCommunityId}`, "user");
+    const url = buildApiUrl(
+      `/importLandmarks?source_community_id=${sourceCommunityId}&target_community_id=${targetCommunityId}`,
+      "user"
+    );
     console.log("Importing landmarks from:", url);
     const response = await axios.post(url);
     console.log("importLandmarks response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error importing landmarks:", error.response?.data || error.message);
+    console.error(
+      "Error importing landmarks:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -467,7 +518,10 @@ export const fetchRMs = async () => {
     console.warn("fetchRMs: Invalid response structure, returning default");
     return { RMs: [], FMs: [] };
   } catch (error) {
-    console.error("Error fetching RMs/FMs:", error.response?.data || error.message);
+    console.error(
+      "Error fetching RMs/FMs:",
+      error.response?.data || error.message
+    );
     return { RMs: [], FMs: [] };
   }
 };
@@ -546,7 +600,6 @@ export const addNewRecord = async (tableIndex, communityid, fmid, rmid) => {
   }
 };
 
-
 export const fetchid = async () => {
   try {
     const url = buildApiUrl("/getRecords", "crud");
@@ -554,8 +607,8 @@ export const fetchid = async () => {
     const response = await axios.get(url, {
       params: {
         tableName: "dy_rm_fm_com_map",
-        fieldNames: "id"
-      }
+        fieldNames: "id",
+      },
     });
     console.log("fetchid response:", response.data);
     return response.data.result;
@@ -564,7 +617,6 @@ export const fetchid = async () => {
     return error;
   }
 };
-
 
 // ------------------- DB Tables APIs ------------------- //
 
@@ -577,7 +629,10 @@ export const fetchTables = async () => {
     console.log("fetchTables response:", response.data);
     return Array.isArray(response.data.tables) ? response.data.tables : [];
   } catch (error) {
-    console.error("Error fetching tables:", error.response?.data || error.message);
+    console.error(
+      "Error fetching tables:",
+      error.response?.data || error.message
+    );
     return [];
   }
 };
@@ -595,7 +650,10 @@ export const fetchTableData = async (tableName) => {
       },
     });
     console.log("fetchTableData response:", response.data);
-    if (Array.isArray(response.data.result) && response.data.result.length > 0) {
+    if (
+      Array.isArray(response.data.result) &&
+      response.data.result.length > 0
+    ) {
       return {
         result: response.data.result,
         headers: Object.keys(response.data.result[0]),
@@ -603,7 +661,10 @@ export const fetchTableData = async (tableName) => {
     }
     return { result: [], headers: [] };
   } catch (error) {
-    console.error("Error fetching table data:", error.response?.data || error.message);
+    console.error(
+      "Error fetching table data:",
+      error.response?.data || error.message
+    );
     return { result: [], headers: [] };
   }
 };
@@ -644,13 +705,20 @@ export const saveRecords = async (tableName, selectedRows, tableData) => {
     }
     return { success: true, results };
   } catch (error) {
-    console.error("Error saving records:", error.response?.data || error.message);
+    console.error(
+      "Error saving records:",
+      error.response?.data || error.message
+    );
     return { error: error.message };
   }
 };
 
 // Delete table records
-export const deleteTableRecords = async (tableName, selectedRows, tableData) => {
+export const deleteTableRecords = async (
+  tableName,
+  selectedRows,
+  tableData
+) => {
   try {
     const failedDeletes = [];
     for (const rowIndex of selectedRows) {
@@ -671,23 +739,28 @@ export const deleteTableRecords = async (tableName, selectedRows, tableData) => 
     }
     return { success: failedDeletes.length === 0, failed: failedDeletes };
   } catch (error) {
-    console.error("Error deleting records:", error.response?.data || error.message);
+    console.error(
+      "Error deleting records:",
+      error.response?.data || error.message
+    );
     return { error: error.message, failed: selectedRows };
   }
 };
-
 
 // ------------------- Enquiry Management APIs ------------------- //
 
 export const fetchEnquiries = async () => {
   try {
     const url = buildApiUrl("/getNewEnquiryRecord", "user");
-    console.log("Fetching enquiries from:", url);
+    
     const response = await axios.get(url);
-    console.log("fetchEnquiries response:", response.data);
+   
     return Array.isArray(response.data.result) ? response.data.result : [];
   } catch (error) {
-    console.error("Error fetching enquiries:", error.response?.data || error.message);
+    console.error(
+      "Error fetching enquiries:",
+      error.response?.data || error.message
+    );
     return [];
   }
 };
@@ -698,12 +771,16 @@ export const fetchEnquiryDetails = async (enqId) => {
     const url = buildApiUrl(`/getNewEnquiryRecord?enq_id=${enqId}`, "user");
     console.log("Fetching enquiry details from:", url);
     const response = await axios.get(url);
-    console.log("fetchEnquiryDetails response:", response.data);
-    return Array.isArray(response.data.result) && response.data.result.length > 0
+   
+    return Array.isArray(response.data.result) &&
+      response.data.result.length > 0
       ? response.data.result[0]
       : null;
   } catch (error) {
-    console.error("Error fetching enquiry details:", error.response?.data || error.message);
+    console.error(
+      "Error fetching enquiry details:",
+      error.response?.data || error.message
+    );
     return null;
   }
 };
@@ -718,7 +795,10 @@ export const updateEnquiry = async (payload) => {
     console.log("updateEnquiry response:", response.data);
     return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error updating enquiry:", error.response?.data || error.message);
+    console.error(
+      "Error updating enquiry:",
+      error.response?.data || error.message
+    );
     return { error: error.response?.data?.error || error.message };
   }
 };
@@ -728,26 +808,31 @@ export const fetchEnquiryDropdownOptions = async () => {
     const url = buildApiUrl("/getPostData", "user");
     console.log("Fetching enquiry dropdown options from:", url);
     const response = await axios.get(url);
-    console.log("fetchEnquiryDropdownOptions response:", response.data);
-    return response.data.result || {
-      cities: [],
-      builders: [],
-      communities: [],
-      balconies: [],
-      baths: [],
-      beds: [],
-      homeTypes: [],
-      parkingCounts: [],
-      propDesc: [],
-      tenants: [],
-      tenantEatPrefs: [],
-      propType: [],
-      availability: [],
-      facing: [],
-      parkingType: [],
-    };
+  
+    return (
+      response.data.result || {
+        cities: [],
+        builders: [],
+        communities: [],
+        balconies: [],
+        baths: [],
+        beds: [],
+        homeTypes: [],
+        parkingCounts: [],
+        propDesc: [],
+        tenants: [],
+        tenantEatPrefs: [],
+        propType: [],
+        availability: [],
+        facing: [],
+        parkingType: [],
+      }
+    );
   } catch (error) {
-    console.error("Error fetching enquiry dropdown options:", error.response?.data || error.message);
+    console.error(
+      "Error fetching enquiry dropdown options:",
+      error.response?.data || error.message
+    );
     return {
       cities: [],
       builders: [],
@@ -767,3 +852,5 @@ export const fetchEnquiryDropdownOptions = async () => {
     };
   }
 };
+
+

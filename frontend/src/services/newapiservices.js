@@ -41,9 +41,9 @@ export const fetchAllProperties = async (
 
 export const fetchUserActions = async (userId) => {
   try {
-    //const url = buildApiUrl(`/usermyfavourties?user_id=${userId}`);
     const url = buildApiUrl(`/usermyfavourties?user_id=${userId}`, "user");
     const response = await axios.get(url);
+   
     return response;
   } catch (error) {
     console.error("Error fetching user actions:", error);
@@ -145,7 +145,7 @@ export const updateRMTask = async (userId, propertyId, statusId) => {
 
 export const deleteRMTask = async (trId) => {
   try {
-    const response = await axios.delete(buildApiUrl("/deleteRecord", null, true), {
+    const response = await axios.delete(buildApiUrl("/deleteRecord", "crud"), {
       data: {
         tableName: "dy_transactions",
         whereCondition: `id = ${trId}`,
@@ -172,6 +172,7 @@ export const addNewTestimonial = async (testimonialData, imageFile) => {
     formData.append("current_status", testimonialData.current_status);
     formData.append("city_id", testimonialData.city_id);
     formData.append("builder_id", testimonialData.builder_id);
+    formData.append("project_category", testimonialData.project_category);
     formData.append("community_id", testimonialData.community_id);
 
     if (imageFile) {
@@ -215,5 +216,18 @@ export const getTestimonials = async (id = null) => {
         error.response?.data?.error || "Failed to fetch testimonials."
       );
     }
+  }
+};
+
+
+export const fetchCommunityAmenities = async (community_id) => {
+  try {
+    const response = await axios.get(
+      buildApiUrl(`/amenities?community_id=${community_id}`, "user")
+    );
+    return response.data; // backend sends JSON data
+  } catch (error) {
+    console.error("Failed to fetch amenities:", error);
+    return null;
   }
 };

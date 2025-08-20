@@ -48,11 +48,7 @@ const TestimonialsView = () => {
 
   const MIN_REVIEW_LENGTH = 80;
 
-  // Determine project_category based on active tab
-  const getProjectCategory = () => {
-    return location.pathname === '/studio' ? '2' : '1'; // Studio: 2, Rentals: 1
-  };
-
+  
   useEffect(() => {
     const fetchTestimonials = async () => {
       try {
@@ -276,7 +272,7 @@ const TestimonialsView = () => {
         city_id: selectedCity,
         builder_id: selectedBuilder,
         community_id: selectedCommunity,
-        project_category: getProjectCategory(), // Include project_category based on active tab
+        project_category: 1, // Include project_category based on active tab
       };
 
       await addNewTestimonial(testimonialData, profileImage);

@@ -16,6 +16,8 @@ import {
   Car,
   Calendar,
   CheckCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useRoleStore } from "../../../store/roleStore";
 import useActionsListingsStore from "../../../store/userActionsListingsStore";
@@ -24,6 +26,8 @@ import tailwindStyles from "../../../utils/tailwindStyles";
 import PaymentModal from "../../../components/CommonViews/PaymentModel";
 import BrokerageView from "../InitialLandingView/BrokerageView";
 import { handlePayment } from "../../../utils/paymentUtils";
+
+import AmenitiesList from "../UserLandingView/AmenitiesList";
 
 // InfoItem component remains unchanged
 const InfoItem = ({ value, label, addBorderRight, addBorderBottom }) => {
@@ -60,37 +64,42 @@ const FavouritesCard = ({ property, initialInvoice, receipt }) => {
   const navigate = useNavigate();
   const { userData } = useRoleStore();
   const { userProperties, fetchActionsListings } = useActionsListingsStore();
+  
 
-  const mapBackendDataToComponent = (property) => {
-    const allImages = [property.default_img, ...(property.images || [])].filter(
-      Boolean
-    );
-    return {
-      images: allImages.length > 0 ? allImages : ["default-image.jpg"],
-      name: `${property.community_name}`,
-      amenities: property.amenities || [],
-      communitydetails: `${property.total_area} Campus with ${property.totflats} Units ${property.majorArea ? ", " + property.majorArea : ""}`,
-      location: property.address,
-      details: {
-        "Rent/Month": `₹ ${property.rental_high.toLocaleString()} ${property.maintenance_type === "Included" ? " + Maintenance" : ""}`,
-        Deposit: property.deposit_amount
-          ? `₹ ${property.deposit_amount.toLocaleString()}`
-          : "N/A",
-        Area: `${property.super_area ? property.super_area + " sqft" : "- -"}`,
-        Type: property.home_type || "N/A",
-        Furnishing: property.prop_desc || "N/A",
-        Floor: property.floor_no || "N/A",
-        Parking: property.parking_count || "N/A",
-        Availability: property.available_date || "N/A",
-      },
-    };
+
+  // Inside mapBackendDataToComponent
+const mapBackendDataToComponent = (property) => {
+  const allImages = [property.default_img, ...(property.images || [])].filter(Boolean);
+  return {
+    communityId: property.community_id, // <-- Added here
+    images: allImages.length > 0 ? allImages : ["default-image.jpg"],
+    name: `${property.community_name}`,
+    amenities: property.amenities || [],
+    communitydetails: `${property.total_area} Campus with ${property.totflats} Units ${property.majorArea ? ", " + property.majorArea : ""}`,
+    location: property.address,
+    details: {
+      "Rent/Month": `₹ ${property.rental_high.toLocaleString()} ${property.maintenance_type === "Included" ? " + Maintenance" : ""}`,
+      Deposit: property.deposit_amount ? `₹ ${property.deposit_amount.toLocaleString()}` : "N/A",
+      Area: `${property.super_area ? property.super_area + " sqft" : "- -"}`,
+      Type: property.home_type || "N/A",
+      Furnishing: property.prop_desc || "N/A",
+      Floor: property.floor_no || "N/A",
+      Parking: property.parking_count || "N/A",
+      Availability: property.available_date || "N/A",
+    },
   };
+};
 
-  const { images, name, location, details, communitydetails } =
-    mapBackendDataToComponent(property);
+
+  const { images, name, location, details, communitydetails, communityId } =
+  mapBackendDataToComponent(property);
+
 
   const [mainImage, setMainImage] = useState(images[0]);
-  const [isAmenitiesOpen, setIsAmenitiesOpen] = useState(false);
+ const [isAmenitiesOpen, setIsAmenitiesOpen] = useState(false);
+  const [amenitiesData, setAmenitiesData] = useState(null);
+  const [isAmenitiesLoading, setIsAmenitiesLoading] = useState(false);
+
   const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
   const [isBrokerageOpen, setIsBrokerageOpen] = useState(false); // New state for Brokerage modal
   const [amount, setAmount] = useState("Here");
@@ -163,6 +172,7 @@ const FavouritesCard = ({ property, initialInvoice, receipt }) => {
       setIsConfirmPopupOpen(false);
     }
   };
+
 
   const handleClose = () => {
     setPaymentShowModal(false);
@@ -277,6 +287,9 @@ const FavouritesCard = ({ property, initialInvoice, receipt }) => {
               );
             })}
           </div>
+          
+    {/* Amenities Section */}
+<AmenitiesList communityId={property.community_id} isOpen={isAmenitiesOpen} />
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -296,12 +309,13 @@ const FavouritesCard = ({ property, initialInvoice, receipt }) => {
               </button>
             )}
             <div className="flex gap-2 sm:gap-3">
-              <button
-                onClick={() => setIsAmenitiesOpen(true)}
-                className={`flex-1 ${tailwindStyles.thirdButton}`}
-              >
-                View Amenities
-              </button>
+          <button
+          onClick={() => setIsAmenitiesOpen(!isAmenitiesOpen)}
+          className={`flex items-center justify-center gap-3 flex-1 order-1 md:order-2 ${tailwindStyles.thirdButton}`}
+        >
+          View Amenities{" "}
+          <div>{isAmenitiesOpen ? <ChevronUp className="h-5 w-5 text-[#ffc107]" /> : <ChevronDown className="h-5 w-5 text-[#ffc107]" />}</div>
+        </button>
               </div>
               {!isPaymentReady && !receipt && (
                  <div className="ml-auto">

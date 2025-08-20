@@ -1039,14 +1039,16 @@ class PropertyController extends BaseController {
     try {
       const cacheKey = "filtered_data";
 
-      // Check if data is cached
+      // For testing - clear cache each time
+      await redis.del(cacheKey);
+
+      // Try cache first
       const cachedData = await redis.get(cacheKey);
       if (cachedData) {
         console.log("Serving from cache");
         return res.status(200).json(JSON.parse(cachedData));
       }
 
-      // Define tables
       const tables = {
         cities: "st_city",
         builders: "st_builder",
@@ -1056,33 +1058,60 @@ class PropertyController extends BaseController {
         propDesc: "st_prop_desc",
         tenants: "st_tenant",
       };
+
       const joins = {
-        builders: "LEFT JOIN st_city sc ON st_builder.city_id =sc.id",
-        communities:
-          "LEFT JOIN st_builder sb ON st_community.builder_id =sb.id",
+        cities: "",
+        builders: `
+        LEFT JOIN st_city sc 
+          ON st_builder.city_id = sc.id
+        INNER JOIN st_community c 
+          ON st_builder.id = c.builder_id 
+         AND c.rstatus = 1
+      `,
+        communities: `
+        INNER JOIN st_builder sb 
+          ON st_community.builder_id = sb.id 
+         AND sb.rstatus = 1
+      `,
+        homeTypes: "",
+        availability: "",
+        propDesc: "",
+        tenants: "",
       };
 
-      // Define fields to fetch from each table
       const fieldsToFetch = {
-        cities: "st_city.id as id, st_city.name as name",
-        builders:
-          "st_builder.id as id, st_builder.name as name, st_builder.city_id as city_id,sc.name as city_name",
-        communities:
-          "st_community.id as id, st_community.name as name, st_community.builder_id,sb.name as builder_name",
-        homeTypes: "id, home_type as name",
-        availability: "id, available as name",
-        propDesc: "id, prop_desc as name",
-        tenants: "id, tenant_type as name",
+        cities: "st_city.id AS id, st_city.name AS name",
+        builders: `
+        DISTINCT st_builder.id AS id, 
+        st_builder.name AS name, 
+        st_builder.city_id AS city_id,
+        sc.name AS city_name
+      `,
+        communities: `
+        st_community.id AS id, 
+        st_community.name AS name, 
+        st_community.builder_id, 
+        sb.name AS builder_name
+      `,
+        homeTypes: "id, home_type AS name",
+        availability: "id, available AS name",
+        propDesc: "id, prop_desc AS name",
+        tenants: "id, tenant_type AS name",
       };
 
-      // Fetch data from all tables concurrently
       const data = await Promise.all(
         Object.keys(tables).map(async (tableName) => {
           const fields = fieldsToFetch[tableName];
-          const condition =
-            tableName === "availability"
-              ? ""
-              : `${tables[tableName]}.rstatus = 1`;
+          let condition = "";
+
+          if (tableName === "builders") {
+            condition = `st_builder.rstatus = 1`;
+          } else if (tableName === "communities") {
+            condition = `st_community.rstatus = 1`;
+          } else if (tableName !== "availability") {
+            condition = `${tables[tableName]}.rstatus = 1`;
+          }
+
           const join = joins[tableName] || "";
 
           return await this.dbService.getJoinedData(
@@ -1094,29 +1123,19 @@ class PropertyController extends BaseController {
         })
       );
 
-      // Prepare response structure
       const responseData = {
         message: "Associated data retrieved successfully.",
         result: {
-          cities: Array.from(
-            data[0].sort((a, b) => a.name.localeCompare(b.name))
-          ),
-          builders: Array.from(
-            data[1].sort((a, b) => a.name.localeCompare(b.name))
-          ),
-          communities: Array.from(
-            data[2].sort((a, b) => a.name.localeCompare(b.name))
-          ),
-          homeTypes: Array.from(data[3].sort((a, b) => a.id - b.id)),
-          availability: Array.from(data[4].sort((a, b) => a.id - b.id)),
-          propDesc: Array.from(data[5].sort((a, b) => a.id - b.id)),
-          tenantTypes: Array.from(
-            data[6].sort((a, b) => a.name.localeCompare(b.name))
-          ),
+          cities: data[0].sort((a, b) => a.name.localeCompare(b.name)),
+          builders: data[1].sort((a, b) => a.name.localeCompare(b.name)),
+          communities: data[2].sort((a, b) => a.name.localeCompare(b.name)),
+          homeTypes: data[3].sort((a, b) => a.id - b.id),
+          availability: data[4].sort((a, b) => a.id - b.id),
+          propDesc: data[5].sort((a, b) => a.id - b.id),
+          tenantTypes: data[6].sort((a, b) => a.name.localeCompare(b.name)),
         },
       };
 
-      // Store in Redis for 24 hours (86400 seconds)
       await redis.set(cacheKey, JSON.stringify(responseData), "EX", 86400);
 
       res.status(200).json(responseData);
