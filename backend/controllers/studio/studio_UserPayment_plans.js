@@ -9,32 +9,57 @@ const redis = require("../../config/redis"); // Import configuration
 const { v4: uuidv4 } = require("uuid");
 const paginate = require("../../utils/pagination");
 const TransactionController = require("../../utils/transaction");
-const config = require("../../jsonfiles/rooms_info.json");
+const config = require("../../jsonfiles/studio_info.json");
 const { generateRequestBody } = require("../../utils/requestFactory");
 const CurdController = require("../curdController");
 class StudiouserPaymentplanController extends BaseController {
-async addNewUserPayment(req, res) {
+async addNewUserPaymentplan(req, res) {
   let connection;
   try {
     const { paymentData } = req.body;
+
+    // === Validate request ===
     if (!Array.isArray(paymentData) || paymentData.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Missing or invalid 'paymentData' array.",
       });
     }
+
+    // === Convert array to object ===
     const fieldValues = Object.fromEntries(
       paymentData.map(({ key, value }) => [key, value])
     );
+
+    // === If week_invoice_date or week_due_date provided, keep them as is ===
+    // Do not auto-calculate. Just validate + format if necessary
+    const formatDate = (d) => {
+      if (!d) return null;
+      const date = new Date(d);
+      if (isNaN(date.getTime())) return null; // invalid date
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+    };
+
+    if (fieldValues.week_invoice_date) {
+      fieldValues.week_invoice_date = formatDate(fieldValues.week_invoice_date);
+    }
+    if (fieldValues.week_due_date) {
+      fieldValues.week_due_date = formatDate(fieldValues.week_due_date);
+    }
+
+    // === DB Transaction Start ===
     const curd = new CurdController.UniversalProcedure();
     connection = await TransactionController.getConnection();
     curd.dbService.connection = connection;
     await TransactionController.beginTransaction(connection);
+
+    // === Insert Payment Record ===
     req.body = generateRequestBody("studio_user_payment_plan_info", {
       operationType: "insert",
       fieldValues,
     });
     const { redisKey } = req.body;
+
     const dbResponse = await curd.executeProcedure(req);
     const insertId =
       dbResponse?.result?.insertId ??
@@ -42,12 +67,17 @@ async addNewUserPayment(req, res) {
       (Array.isArray(dbResponse?.result)
         ? dbResponse.result[0]?.insertId
         : null);
+
     if (!insertId) {
       console.error("Insert failed. DB Response:", JSON.stringify(dbResponse));
       throw new Error("User payment insert failed — insertId not found.");
     }
+
+    // === Commit Transaction ===
     await TransactionController.commitTransaction(connection);
     console.log("Transaction committed successfully.");
+
+    // === Clear Redis Cache ===
     if (redis && redis.del && redisKey) {
       try {
         await redis.del(redisKey);
@@ -57,10 +87,14 @@ async addNewUserPayment(req, res) {
         }
       }
     }
+
+    // === Response ===
     return res.status(201).json({
       success: true,
       message: "User payment added successfully.",
       paymentId: insertId,
+      week_invoice_date: fieldValues.week_invoice_date || null,
+      week_due_date: fieldValues.week_due_date || null,
     });
   } catch (error) {
     console.error("Error adding user payment:", error.message);
@@ -81,24 +115,31 @@ async addNewUserPayment(req, res) {
     }
   }
 }
-async getAllVendorPayments(req, res) {
+async getAllUserPaymentPlans(req, res) {
   const { id, vendor_id, project_id, task_id, pymt_status } = req.query;
   const curd = new CurdController.UniversalProcedure();
+
   try {
     const isSimpleQuery = !id && !vendor_id && !project_id && !task_id && !pymt_status;
+
     const whereClauses = [];
-    if (id) whereClauses.push(`svp.id = ${Number(id)}`);
-    if (vendor_id) whereClauses.push(`svp.vendor_id = ${Number(vendor_id)}`);
-    if (project_id) whereClauses.push(`svp.project_id = ${Number(project_id)}`);
+    if (id) whereClauses.push(`supp.id = ${Number(id)}`);
+    if (vendor_id) whereClauses.push(`svp.vendor_id = '${vendor_id}'`);
+    if (project_id) whereClauses.push(`supp.project_id = ${Number(project_id)}`);
     if (task_id) whereClauses.push(`svp.task_id = ${Number(task_id)}`);
-    if (pymt_status) whereClauses.push(`svp.pymt_status = '${pymt_status}'`);
-    const whereClause = whereClauses.join(" AND ");
+    if (pymt_status) whereClauses.push(`supp.payment_status = '${(Number(pymt_status))}'`);
+
+    const whereClause = whereClauses.length ? whereClauses.join(" AND ") : undefined;
+
     req.body = generateRequestBody("studio_user_payment_plan_info", {
       operationType: "select",
-      whereclause: whereClause || undefined
+      whereclause: whereClause
     });
+
     const { redisKey } = req.body;
-    if (isSimpleQuery && redis && redis.get) {
+
+    // Try Redis cache first (only for simple queries)
+    if (isSimpleQuery && redis?.get) {
       try {
         const cached = await redis.get(redisKey);
         if (cached) {
@@ -110,35 +151,40 @@ async getAllVendorPayments(req, res) {
         }
       } catch (redisErr) {
         if (process.env.NODE_ENV !== "production") {
-          console.warn("Redis GET failed (possibly replica/unavailable):", redisErr.message);
+          console.warn("Redis GET failed (possibly read-only replica):", redisErr.message);
         }
       }
     }
+
     const dbResponse = await curd.executeProcedure(req);
     const result = dbResponse?.result || [];
-    if (isSimpleQuery && result.length > 0 && redis && redis.set) {
+
+    // Cache results if simple query
+    if (isSimpleQuery && result.length && redis?.set) {
       try {
         await redis.set(redisKey, JSON.stringify(result));
       } catch (redisErr) {
         if (process.env.NODE_ENV !== "production") {
-          console.warn("Redis SET failed (possibly replica/unavailable):", redisErr.message);
+          console.warn("Redis SET failed (possibly read-only replica):", redisErr.message);
         }
       }
     }
+
     return res.status(200).json({
       success: true,
       source: isSimpleQuery ? "db + cache" : "db",
       result,
     });
   } catch (error) {
-    console.error("Error retrieving studio vendor payments:", error);
+    console.error("Error retrieving studio user payment plans:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to retrieve studio vendor payments.",
+      message: "Failed to retrieve studio user payment plans.",
       error: error.message,
     });
   }
 }
+
 async updateUserPaymentPlan(req, res) {
   let connection;
   try {
@@ -260,4 +306,5 @@ async deleteStudioUserPaymentPlan(req, res) {
   }
 }
 }
+
 module.exports = StudiouserPaymentplanController;

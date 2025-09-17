@@ -9,7 +9,7 @@ const redis = require("../../config/redis"); // Import configuration
 const { v4: uuidv4 } = require("uuid");
 const paginate = require("../../utils/pagination");
 const TransactionController = require("../../utils/transaction");
-const config = require("../../jsonfiles/rooms_info.json");
+const config = require("../../jsonfiles/studio_info.json");
 const { generateRequestBody } = require("../../utils/requestFactory");
 const CurdController = require("../curdController");
 class StudiovendorsController extends BaseController {

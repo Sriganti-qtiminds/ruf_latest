@@ -1,11 +1,33 @@
 const db = require("../config/db"); // Database db
 require("dotenv").config();
-
 class DatabaseServicestudio {
+  /**
+   * constructor of the class
+   * initializes conection for the class
+   * @param {*} connection -connection objec
+   */
   constructor(connection) {
     this.connection = connection || db; // use passed-in connection or default pool
+    this.dbname = process.env.DB_NAME;
+    this.dbservice = new DatabaseService();
   }
 
+  /**
+   * Universal procedure to handle all crud storedprocedures
+   *
+   * @param {*} operationType - type of operation[select,insert,update,delete etc...]
+   * @param {*} tableName - name of the table
+   * @param {*} tableFields - interested field names
+   * @param {*} fieldValues - values for above field names
+   * @param {*} updatekeyvaluepairs - key value pairs for update actionn
+   * @param {*} whereclause - conditional arguments
+   * @param {*} sortfields - fields order for sorting
+   * @param {*} aggregatefields - fields for aggregations[sum,avg,max,min etc...]
+   * @param {*} aggregateclause - conditions for aggregations
+   * @param {*} joinClause - relationship clause between tables
+   * @param {*} sortorder - sorting order Asc, Desc
+   * @returns matched data rows
+   */
   async callUniversalProcedure(
     operationType,
     tableName,
@@ -20,8 +42,9 @@ class DatabaseServicestudio {
     sortorder
   ) {
     let query = "";
-    let result;
+    let result = "";
 
+    //coverts objects in key value pair and  returns a comma seperated string
     const toSetClause = (obj) => {
       return Object.entries(obj)
         .map(([k, v]) => `${k} = ${db.escape(v)}`)
@@ -37,21 +60,39 @@ class DatabaseServicestudio {
 
     switch (lowerOp) {
       case "insert":
-        query = `INSERT INTO ${tableName} SET ?`;
-        [result] = await this.connection.query(query, fieldValues);
 
-        console.log("Insert result from DB:", result); // ✅ Debug log
+        const payloadKeys = Object.keys(fieldValues)
+          .map((col) => `\`${col}\``) // wrap in backticks
+          .join(", ");
+
+        const payloadValues = Object.values(fieldValues)
+          .map((v) => (typeof v === "number" ? v : `'${v}'`))
+          .join(", ");
+
+        console.log("Columns :", payloadKeys);
+        console.log("Values :", payloadValues);
+
+        const insertedrows = await this.dbservice.addNewRecord(
+          tableName,
+          payloadKeys,
+          payloadValues
+        );
+        result = insertedrows;
+        //query = `INSERT INTO ${tableName} SET ?`;
+        //[result] = await this.connection.query(query, fieldValues);
+
+        console.log("Insert result from DB:", result);
+        console.log("Row ID from DB:", result[0].rowId);
+        console.log("affectedRows from DB:", result.affectedRows);
 
         return {
           result: {
-            insertId: result.insertId,
-            affectedRows: result.affectedRows,
+            insertId: result[0].rowId,
           },
-          insertId: result.insertId,
-          affectedRows: result.affectedRows,
+          insertId: result[0].rowId,
         };
 
-      case "update":
+      case "update":        
         if (
           !whereclause ||
           !updatekeyvaluepairs ||
@@ -59,37 +100,61 @@ class DatabaseServicestudio {
         ) {
           throw new Error("Missing update data or WHERE clause for UPDATE.");
         }
+        console.log("Key Values : ", updatekeyvaluepairs);
+
         const updateClause = toSetClause(updatekeyvaluepairs);
-        query = `UPDATE ${tableName} SET ${updateClause} WHERE ${whereclause}`;
-        [result] = await this.connection.query(query);
+        console.log("update Clause : ", updateClause);        
+
+        const updatedrows = await this.dbservice.updateRecord(
+          tableName,
+          updateClause,
+          whereclause
+        );
+        console.log("updaterows",updatedrows);
+        
+        result = updatedrows;
         return {
+          
           result,
-          affectedRows: result.affectedRows,
+          
         };
 
       case "delete":
-        if (!whereclause) throw new Error("DELETE requires a WHERE clause.");
-        query = `DELETE FROM ${tableName} WHERE ${whereclause}`;
-        [result] = await this.connection.query(query);
+        if (!whereclause) throw new Error("DELETE requires a WHERE clause.");        
+        const deletedrows = await this.dbservice.deleteRecord(
+          tableName,
+          whereclause
+        );
+
+        console.log("Where Clause : ", whereclause);
+
+        result = deletedrows;
         return {
           result,
           affectedRows: result.affectedRows,
-        };
+        };
 
       case "select":
         const fields = Array.isArray(tableFields)
           ? tableFields.join(", ")
           : tableFields;
-        query = `SELECT ${fields} FROM ${tableName}`;
-        if (joinClause) query += ` ${joinClause}`;
-        if (whereclause) query += ` WHERE ${whereclause}`;
-        if (aggregateclause) query += ` ${aggregateclause}`;
-        if (sortfields) query += ` ORDER BY ${sortfields} ${sortorder}`;
-        [result] = await this.connection.query(query);
-        return {
-          result,
-        };
+        const outputrows = await this.dbservice.getJoinedData(
+          tableName,
+          joinClause,
+          fields,
+          whereclause
+        );
+        result = Array.isArray(outputrows) ? outputrows : []; //outputrows;
+        console.log("Type of Service Result :", typeof(result));
 
+        if (Array.isArray(result)) {
+          console.log("It is an Array from Service");
+        } else {
+          console.log("It is an object from Service");
+        }
+        //console.log("Result :", result);
+        return result;
+      
       default:
         throw new Error(`Unsupported operation type: ${operationType}`);
     }
@@ -109,6 +174,7 @@ class DatabaseService {
         fieldNames,
         fieldValues,
       ]);
+      console.log("Result Data : ", rows);
 
       // If the connection was obtained inside this method (i.e., it wasn't passed), release it
       if (!connection) {
@@ -146,32 +212,29 @@ class DatabaseService {
   ) {
     try {
       // If no connection is provided, get a new database connection
-      let ownConnection = false;
       if (!connection) {
-        connection = await db.getConnection();
-        ownConnection = true; // Flag to release connection later
+        connection = await db.getConnection(); // Get a regular connection if none provided
       }
+      
 
-      // Construct the SET clause dynamically from fieldValuePairs
-      let setClause = Object.entries(fieldValuePairs)
-        .map(([key]) => `${key} = ?`)
-        .join(", ");
+      // Prepare the SQL query      
+      const procedureCall = `CALL updateRecord(?, ?, ?);`;
 
-      // Prepare the SQL query
-      const procedureCall = `UPDATE ${tableName} SET ${setClause} WHERE ${whereCondition}`;
+      
 
-      // Prepare the values for the placeholders in the query
-      const values = Object.values(fieldValuePairs);
-
-      // Execute the query using the provided or obtained connection
-      const [rows] = await connection.execute(procedureCall, values);
+      // Execute the query using the provided or obtained connection      
+      const [rows] = await db.execute(procedureCall, [
+        tableName,
+        fieldValuePairs,
+        whereCondition,
+      ]);
 
       // If we created the connection inside this method, release it
-      if (ownConnection) {
+      if (connection) {
         await connection.release();
       }
 
-      return rows; // Return the result
+      return rows[0]; // Return the result
     } catch (error) {
       console.error("Error executing updateRecord:", error.message);
       throw error;
@@ -208,9 +271,9 @@ class DatabaseService {
         fields,
         whereClause,
       ]);
+      
 
-      // Return the result set, typically in the first index of the rows array.
-      return rows[0]; // The result set is usually in the first index.
+      return rows[0];
     } catch (error) {
       // Log and throw any errors that occur during the query execution.
       console.error("Error executing getJoinedData:", error.message);
@@ -267,6 +330,25 @@ class DatabaseService {
     }
   }
 
+  async getTableFields(dbname, tableName) {
+    try {
+      console.log("DB Name : ", dbname);
+      console.log("Table Name : ", tableName);
+
+      const procedureCall = `CALL GetAllColumnsofTable(?, ?);`;
+      const [rows] = await db.execute(procedureCall, [dbname, tableName]);
+
+      const result = rows[0].map((r) => r.COLUMN_NAME);
+
+      console.log("Field Names in getTableFields : ", result);
+
+      return rows[0].map((r) => r.COLUMN_NAME);
+    } catch (error) {
+      console.error("Error executing GetAllColumnsofTable:", error.message);
+      throw error;
+    }
+  }
+
   async getSortedData(Tbl_Name, Order_Field_Name, Sort_Type) {
     try {
       // Validate the sort direction
@@ -291,5 +373,4 @@ class DatabaseService {
     }
   }
 }
-
 module.exports = { DatabaseService, DatabaseServicestudio };

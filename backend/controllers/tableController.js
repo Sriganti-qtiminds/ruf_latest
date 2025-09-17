@@ -1035,118 +1035,125 @@ class PropertyController extends BaseController {
     }
   }
 
-  async filterdata(req, res) {
-    try {
-      const cacheKey = "filtered_data";
 
-      // For testing - clear cache each time
-      await redis.del(cacheKey);
+ 
+async filterdata(req, res) {
+  try {
+    const cacheKey = "filtered_data";
 
-      // Try cache first
-      const cachedData = await redis.get(cacheKey);
-      if (cachedData) {
-        console.log("Serving from cache");
-        return res.status(200).json(JSON.parse(cachedData));
-      }
+    // For testing - clear cache each time
+    await redis.del(cacheKey);
 
-      const tables = {
-        cities: "st_city",
-        builders: "st_builder",
-        communities: "st_community",
-        homeTypes: "st_home_type",
-        availability: "st_availability",
-        propDesc: "st_prop_desc",
-        tenants: "st_tenant",
-      };
+    // Try cache first
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+      console.log("Serving from cache");
+      return res.status(200).json(JSON.parse(cachedData));
+    }
 
-      const joins = {
-        cities: "",
-        builders: `
+    const tables = {
+      cities: "st_city",
+      builders: "st_builder",
+      communities: "st_community",
+      homeTypes: "st_home_type",
+      availability: "st_availability",
+      propDesc: "st_prop_desc",
+      tenants: "st_tenant",
+    };
+
+    const joins = {
+      cities: "",
+      builders: `
         LEFT JOIN st_city sc 
           ON st_builder.city_id = sc.id
         INNER JOIN st_community c 
           ON st_builder.id = c.builder_id 
          AND c.rstatus = 1
       `,
-        communities: `
+      communities: `
         INNER JOIN st_builder sb 
           ON st_community.builder_id = sb.id 
          AND sb.rstatus = 1
       `,
-        homeTypes: "",
-        availability: "",
-        propDesc: "",
-        tenants: "",
-      };
+      homeTypes: "",
+      availability: "",
+      propDesc: "",
+      tenants: "",
+    };
 
-      const fieldsToFetch = {
-        cities: "st_city.id AS id, st_city.name AS name",
-        builders: `
+    const fieldsToFetch = {
+      cities: "st_city.id AS id, st_city.name AS name",
+      builders: `
         DISTINCT st_builder.id AS id, 
         st_builder.name AS name, 
         st_builder.city_id AS city_id,
         sc.name AS city_name
       `,
-        communities: `
+      communities: `
         st_community.id AS id, 
         st_community.name AS name, 
         st_community.builder_id, 
         sb.name AS builder_name
       `,
-        homeTypes: "id, home_type AS name",
-        availability: "id, available AS name",
-        propDesc: "id, prop_desc AS name",
-        tenants: "id, tenant_type AS name",
-      };
+      homeTypes: "id, home_type AS name",
+      availability: "id, available AS name",
+      propDesc: "id, prop_desc AS name",
+      tenants: "id, tenant_type AS name",
+    };
 
-      const data = await Promise.all(
-        Object.keys(tables).map(async (tableName) => {
-          const fields = fieldsToFetch[tableName];
-          let condition = "";
+    const data = await Promise.all(
+      Object.keys(tables).map(async (tableName) => {
+        const fields = fieldsToFetch[tableName];
+        let condition = "";
 
-          if (tableName === "builders") {
-            condition = `st_builder.rstatus = 1`;
-          } else if (tableName === "communities") {
-            condition = `st_community.rstatus = 1`;
-          } else if (tableName !== "availability") {
-            condition = `${tables[tableName]}.rstatus = 1`;
-          }
+        if (tableName === "builders") {
+          condition = `st_builder.rstatus = 1`;
+        } else if (tableName === "communities") {
+          condition = `st_community.rstatus = 1`;
+        } else if (tableName !== "availability") {
+          condition = `${tables[tableName]}.rstatus = 1`;
+        }
 
-          const join = joins[tableName] || "";
+        const join = joins[tableName] || "";
 
-          return await this.dbService.getJoinedData(
-            tables[tableName],
-            join,
-            fields,
-            condition
-          );
-        })
-      );
+        return await this.dbService.getJoinedData(
+          tables[tableName],
+          join,
+          fields,
+          condition
+        );
+      })
+    );
 
-      const responseData = {
-        message: "Associated data retrieved successfully.",
-        result: {
-          cities: data[0].sort((a, b) => a.name.localeCompare(b.name)),
-          builders: data[1].sort((a, b) => a.name.localeCompare(b.name)),
-          communities: data[2].sort((a, b) => a.name.localeCompare(b.name)),
-          homeTypes: data[3].sort((a, b) => a.id - b.id),
-          availability: data[4].sort((a, b) => a.id - b.id),
-          propDesc: data[5].sort((a, b) => a.id - b.id),
-          tenantTypes: data[6].sort((a, b) => a.name.localeCompare(b.name)),
-        },
-      };
+    const responseData = {
+      message: "Associated data retrieved successfully.",
+      result: {
+        cities: data[0].sort((a, b) => a.name.localeCompare(b.name)),
+        builders: data[1].sort((a, b) => a.name.localeCompare(b.name)),
+        communities: data[2].sort((a, b) => a.name.localeCompare(b.name)),
+        homeTypes: data[3].sort((a, b) => a.id - b.id),
+        availability: data[4].sort((a, b) => a.id - b.id),
+        propDesc: data[5].sort((a, b) => a.id - b.id),
+        tenantTypes: data[6].sort((a, b) => a.name.localeCompare(b.name)),
+      },
+    };
 
-      await redis.set(cacheKey, JSON.stringify(responseData), "EX", 86400);
+    await redis.set(cacheKey, JSON.stringify(responseData), "EX", 86400);
 
-      res.status(200).json(responseData);
-    } catch (error) {
-      console.error("Error fetching associated data:", error);
-      res.status(500).json({
-        error: "An error occurred while fetching data.",
-        details: error.message,
-      });
-    }
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error("Error fetching associated data:", error);
+    res.status(500).json({
+      error: "An error occurred while fetching data.",
+      details: error.message,
+    });
   }
+}
+
+
+
+
+
 
   async getPostData(req, res) {
     try {
@@ -1397,7 +1404,7 @@ class UserActionsController extends BaseController {
       ${propertyFields}`;
 
         const fields = `
-      dt.id as tr_id, dt.prop_id, dt.tr_st_time AS start_time,
+      dt.id as tr_id, dt.prop_id, dt.tr_st_time AS start_time,dt.community_id,
     dt.tr_upd_time AS update_time,dt.cur_stat_code, sct.status_code, dt.tr_st_time, 
       rm.user_name as rm_name, rm.mobile_no as rm_mobile_no, 
       fm.user_name as fm_name, fm.mobile_no as fm_mobile_no, 
@@ -1434,6 +1441,7 @@ class UserActionsController extends BaseController {
               property_added_at: item.tr_st_time,
               rm_id: item.rm_id,
               rm_name: item.rm_name,
+              community_id:item.community_id,
               RM_mobile_no: item.rm_mobile_no,
               fm_id: item.fm_id,
               fm_name: item.fm_name,
@@ -1494,6 +1502,8 @@ class UserActionsController extends BaseController {
       });
     }
   }
+  
+  
 }
 
 class UserProfile extends BaseController {

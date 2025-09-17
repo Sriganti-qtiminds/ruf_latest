@@ -1,206 +1,237 @@
-
-
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { studioTailwindStyles } from "../../utils/studioTailwindStyles";
+import useStudioPaymentsStore from "../../store/stdInvoice";
+import { useRoleStore } from "../../store/roleStore";
+import { useNavigate } from "react-router-dom";
+import { STUDIO_BASE } from "../../routes/routesPath";
+import { fetchInvoiceRecords, fetchStudioUserPayments } from "../../services/studioapiservices";
+import PaymentModal from "../../components/CommonViews/PaymentModel";
+import { handleProjectPayment } from "../../utils/paymentUtils";
 
-const ProjectTaskPayments = ({ weeklyTasks }) => {
-  const [weeklyPaymentsProject, setWeeklyPaymentsProject] = useState("all");
-  const [week, setWeek] = useState("all");
+const ProjectTaskPayments = () => {
+  const [projectFilter, setProjectFilter] = useState("all");
+  const { invoices, receipts, loading, error, loadInvoices, loadReceipts } = useStudioPaymentsStore();
+  const { userData } = useRoleStore();
+  const navigate = useNavigate();
 
-  // Check if weeklyTasks is defined
-  if (!weeklyTasks || typeof weeklyTasks !== "object") {
-    return (
-      <div className="bg-white rounded shadow mb-6">
-         <div className="p-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-           <h2 className={`${studioTailwindStyles.heading_2} text-[#1A1F3D] mb-4`}>
-                     Project Payments
-                   </h2>
-        </div>
-        <div className="p-5">
-          <p className="text-gray-600">No tasks available</p>
-        </div>
-      </div>
-    );
-  }
+  // Payment-related states
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [showPaymentModal, setPaymentShowModal] = useState(false);
+  const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
 
-  // Derive project data from weeklyTasks
-  const projectData = Object.keys(weeklyTasks).reduce((acc, weekKey) => {
-    weeklyTasks[weekKey].forEach((task) => {
-      if (!acc[task.project]) {
-        acc[task.project] = {
-          projectId: task.project,
-          name: task.project, // Placeholder; replace with actual project name if available
-          weeks: new Set(),
-          totalAmount: 0,
-        };
-      }
-      acc[task.project].weeks.add(weekKey);
-      acc[task.project].totalAmount += task.rupees;
-      acc[task.project].name = task.project; // Update name if mapping available
-    });
-    return acc;
-  }, {});
+  // Fetch invoices and receipts on mount with cust_id
+  useEffect(() => {
+    if (userData?.id) {
+      console.log("Fetching invoices and receipts for cust_id:", userData.id);
+      loadInvoices({ cust_id: userData.id });
+      loadReceipts({ cust_id: userData.id });
+    } else {
+      console.warn("No cust_id found in userData, skipping fetch");
+    }
+  }, [loadInvoices, loadReceipts, userData]);
 
-  // Map project names for display (since weeklyTasks uses project IDs)
-  const projectNameMap = {
-    project1: "Modern Kitchen Renovation",
-    project2: "Master Bathroom Remodel",
-    project3: "Office Electrical Upgrade",
-    project4: "Residential Plumbing System",
-  };
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
-  // Update project names in projectData
-  Object.values(projectData).forEach((project) => {
-    project.name = projectNameMap[project.projectId] || project.projectId;
-  });
+  // Debugging invoices and receipts state
+  useEffect(() => {
+    console.log("Invoices state:", invoices);
+    console.log("Receipts state:", receipts);
+  }, [invoices, receipts]);
 
-  // Convert projectData to array
-  const projectStatusData = Object.values(projectData).map((project) => ({
-    ...project,
-    weeks: Array.from(project.weeks),
-  }));
+  // Get unique projects for filter dropdown
+  const uniqueProjects = Array.isArray(invoices)
+    ? Array.from(new Map(invoices.map((p) => [p.proj_id, p])).values())
+    : [];
 
-  // Flatten tasks from weeklyTasks
-  const allTasks = Object.keys(weeklyTasks).flatMap((weekKey) =>
-    weeklyTasks[weekKey].map((task) => ({
-      name: task.name,
-      status: task.status,
-      project: task.project,
-      paid: task.paid,
-      rupees: task.rupees,
-      week: weekKey,
-    }))
-  );
-
-  // Filter tasks by project and week
-  const filteredTasks = allTasks.filter(
-    (task) =>
-      (weeklyPaymentsProject === "all" || task.project === weeklyPaymentsProject) &&
-      (week === "all" || task.week === week)
-  );
-
-  // Compute weekly payment metrics
-  const weeklyPayments = projectStatusData
-    .filter(
-      (project) =>
-        (weeklyPaymentsProject === "all" || project.projectId === weeklyPaymentsProject) &&
-        (week === "all" || project.weeks.includes(week))
-    )
-    .flatMap((project) => {
-      return project.weeks.map((weekKey) => {
-        const tasksInWeek = allTasks.filter(
-          (task) => task.project === project.projectId && task.week === weekKey
-        );
-        const amountPaid = tasksInWeek.reduce((sum, task) => sum + task.paid, 0);
-        const weeklyAmount = tasksInWeek.reduce((sum, task) => sum + task.rupees, 0);
-        const amountDue = weeklyAmount - amountPaid;
-        return {
-          projectId: project.projectId,
-          projectName: project.name,
-          week: weekKey,
-          totalAmount: project.totalAmount, // Total across all weeks for the project
-          amountPaid,
-          amountDue: amountDue < 0 ? 0 : amountDue, // Prevent negative due amounts
-        };
-      });
-    })
-    .filter((payment) => week === "all" || payment.week === week);
+  // Apply filter based on proj_id
+  const filteredPayments =
+    projectFilter === "all"
+      ? (Array.isArray(invoices) ? invoices : [])
+      : (Array.isArray(invoices) ? invoices.filter((p) => p.proj_id === Number(projectFilter)) : []);
 
   // Format rupees
   const formatRupees = (amount) => {
-    return "₹" + amount.toLocaleString("en-IN");
+    return "₹" + (amount || 0).toLocaleString("en-IN");
   };
 
-  // Payment, Invoice, and Receipt actions
-  const makeWeeklyPayment = (projectId, weekKey) => {
-    const payment = weeklyPayments.find(
-      (p) => p.projectId === projectId && p.week === weekKey
+  // Payment action
+  const makePayment = async (payment) => {
+    console.log("makePayment called with:", { payment, userData });
+    setSelectedPayment(payment);
+    handleProjectPayment(
+      payment.id,
+      payment,
+      userData,
+      setIsPaymentLoading,
+      setPaymentShowModal,
+      setIsPaymentSuccess
     );
-    console.log(
-      `Initiating payment for project: ${projectId}, week: ${weekKey}, amount: ${formatRupees(payment.amountDue)}`
-    );
   };
 
-  const generateInvoice = (projectId, weekKey) => {
-    console.log(`Generating invoice for project: ${projectId}, week: ${weekKey}`);
+  const generateInvoice = async (payment) => {
+    try {
+      const invoiceData = await fetchInvoiceRecords({ id: payment.id });
+      console.log("Fetched Invoice Data:", invoiceData);
+      if (invoiceData.success && invoiceData.result.length > 0) {
+        navigate(`${STUDIO_BASE}/projectPaymentsDocs`, {
+          state: { invoices: invoiceData.result, receipts: [] },
+        });
+      } else {
+        console.warn("No invoice found for id:", payment.id);
+        navigate(`${STUDIO_BASE}/projectPaymentsDocs`, {
+          state: { invoices: [], receipts: [] },
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      navigate(`${STUDIO_BASE}/projectPaymentsDocs`, {
+        state: { invoices: [], receipts: [] },
+      });
+    }
   };
 
-  const generateReceipt = (projectId, weekKey) => {
-    console.log(`Generating receipt for project: ${projectId}, week: ${weekKey}`);
+  const generateReceipt = async (payment) => {
+    // Find the corresponding receipt from the receipts state
+    const receiptData = receipts.find((r) => r.userpayment_id === payment.id || r.id === payment.id);
+    if (receiptData) {
+      const receipt = {
+        ...receiptData,
+        userpayment_id: receiptData.userpayment_id ?? receiptData.id ?? "N/A",
+        rcv_id: receiptData.rcv_id ?? "N/A",
+        wk_no: receiptData.subtasks?.[0]?.week_no ?? receiptData.wk_no ?? "N/A",
+        project_name: receiptData.project_name ?? `Invoice ${receiptData.inv_id ?? "N/A"}`,
+        pymt_act_date: receiptData.pymt_act_date ?? "N/A",
+        amt_act: receiptData.amt_act ?? 0,
+      };
+      console.log("Generated receipt from store:", receipt);
+      navigate(`${STUDIO_BASE}/projectPaymentsDocs`, {
+        state: { invoices: [], receipts: [receipt] },
+      });
+    } else {
+      // Fallback: Fetch receipt data if not in store
+      try {
+        const response = await fetchStudioUserPayments({ id: payment.id });
+        console.log("Fetched receipt data:", response);
+        if (response.success && response.result.length > 0) {
+          const receipt = {
+            ...response.result[0],
+            userpayment_id: response.result[0].userpayment_id ?? response.result[0].id ?? "N/A",
+            rcv_id: response.result[0].rcv_id ?? "N/A",
+            wk_no: response.result[0].subtasks?.[0]?.week_no ?? response.result[0].wk_no ?? "N/A",
+            project_name: response.result[0].project_name ?? `Invoice ${response.result[0].inv_id ?? "N/A"}`,
+            pymt_act_date: response.result[0].pymt_act_date ?? "N/A",
+            amt_act: response.result[0].amt_act ?? 0,
+          };
+          console.log("Generated receipt from API:", receipt);
+          navigate(`${STUDIO_BASE}/projectPaymentsDocs`, {
+            state: { invoices: [], receipts: [receipt] },
+          });
+        } else {
+          console.warn("No receipt found for id:", payment.id);
+          navigate(`${STUDIO_BASE}/projectPaymentsDocs`, {
+            state: { invoices: [], receipts: [] },
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching receipt:", error);
+        navigate(`${STUDIO_BASE}/projectPaymentsDocs`, {
+          state: { invoices: [], receipts: [] },
+        });
+      }
+    }
+  };
+
+  // Handle modal close and refresh
+  const handleClose = () => {
+    setPaymentShowModal(false);
+    setSelectedPayment(null);
+    if (isPaymentSuccess) {
+      loadInvoices({ cust_id: userData.id });
+      loadReceipts({ cust_id: userData.id });
+    }
   };
 
   return (
     <div className="bg-white rounded shadow mb-6">
       <div className="p-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-               <h2 className={`${studioTailwindStyles.heading_2} text-[#1A1F3D] mb-4`}>
-                  Project Payments
-                </h2>
+        <h2 className={`${studioTailwindStyles.heading_2} text-[#1A1F3D] mb-4`}>
+          Project Payments
+        </h2>
         <div className="flex flex-col sm:flex-row gap-2">
           <select
-            id="weeklyPaymentsProjectFilter"
+            id="projectFilter"
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]"
-            value={weeklyPaymentsProject}
-            onChange={(e) => setWeeklyPaymentsProject(e.target.value)}
+            value={projectFilter}
+            onChange={(e) => setProjectFilter(e.target.value)}
           >
             <option value="all">All Projects</option>
-            {projectStatusData.map((project) => (
-              <option key={project.projectId} value={project.projectId}>
-                {project.name}
+            {uniqueProjects.map((p) => (
+              <option key={p.proj_id} value={p.proj_id}>
+                {p.project_name}
               </option>
             ))}
           </select>
-          <select
-            id="weekSelector"
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]"
-            value={week}
-            onChange={(e) => setWeek(e.target.value)}
-          >
-            <option value="all">All Weeks</option>
-            <option value="week1">Week 1 - June 2-8, 2025</option>
-            <option value="week2">Week 2 - June 9-15, 2025</option>
-            <option value="week3">Week 3 - June 16-22, 2025</option>
-            <option value="week4">Week 4 - June 23-29, 2025</option>
-          </select>
         </div>
       </div>
+
       <div className="p-5">
+        {loading && <p className="text-gray-500">Loading payments...</p>}
+        {error && <p className="text-red-500">Error: {error}</p>}
+        {!loading && filteredPayments.length === 0 && (
+          <p className="text-gray-500">No payments found</p>
+        )}
+
         <div className="pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {weeklyPayments.map((payment, index) => (
-            <div key={index} className="col-span-1 sm:col-span-2">
+          {filteredPayments.map((payment) => (
+            <div key={payment.id} className="col-span-1 sm:col-span-2">
               <h3 className="text-sm font-medium text-gray-900">
-                {payment.projectName} - {payment.week.charAt(0).toUpperCase() + payment.week.slice(1)}
+                {`Week ${payment.wk_no || "N/A"}: ${payment.project_name}`}
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-2">
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                 <div>
                   <span className="text-sm text-gray-600">Total Amount</span>
-                  <p className="font-bold text-gray-900">{formatRupees(payment.totalAmount)}</p>
+                  <p className="font-bold text-gray-900">
+                    {formatRupees(payment.wkly_cost_amt)}
+                  </p>
                 </div>
                 <div>
                   <span className="text-sm text-gray-600">Amount Paid</span>
-                  <p className="font-bold text-gray-900">{formatRupees(payment.amountPaid)}</p>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">Amount Due</span>
-                  <p className="font-bold text-gray-900">{formatRupees(payment.amountDue)}</p>
-                  <div className="flex gap-2 mt-2">
-                    {payment.amountDue > 0 && (
+                  <p className="font-bold text-gray-900">
+                    {formatRupees(payment.amt_act ?? 0)}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(payment.wkly_cost_amt !== (payment.amt_act ?? 0)) && (
                       <button
-                        className="px-4 py-1 bg-[#E07A5F] text-white rounded-lg text-xs font-medium hover:bg-[#d16a4f]"
-                        onClick={() => makeWeeklyPayment(payment.projectId, payment.week)}
+                        className={`px-2 sm:px-4 py-1 bg-[#E07A5F] text-white rounded-lg text-xs font-medium hover:bg-[#d16a4f] ${isPaymentLoading && selectedPayment?.id === payment.id ? "opacity-50 cursor-not-allowed" : ""}`}
+                        onClick={() => makePayment(payment)}
+                        disabled={isPaymentLoading && selectedPayment?.id === payment.id}
                       >
-                        Pay
+                        {isPaymentLoading && selectedPayment?.id === payment.id
+                          ? "Processing..."
+                          : `Pay ${formatRupees(payment.wkly_cost_amt - (payment.amt_act ?? 0))}`}
                       </button>
                     )}
                     <button
-                      className="px-4 py-1 bg-gray-600 text-white rounded-lg text-xs font-medium hover:bg-gray-700"
-                      onClick={() => generateInvoice(payment.projectId, payment.week)}
+                      className="px-2 sm:px-4 py-1 bg-gray-600 text-white rounded-lg text-xs font-medium hover:bg-gray-700"
+                      onClick={() => generateInvoice(payment)}
                     >
                       Invoice
                     </button>
-                    {payment.amountPaid > 0 && (
+                    {(payment.amt_act ?? 0) > 0 && (
                       <button
-                        className="px-4 py-1 bg-gray-600 text-white rounded-lg text-xs font-medium hover:bg-gray-700"
-                        onClick={() => generateReceipt(payment.projectId, payment.week)}
+                        className="px-2 sm:px-4 py-1 bg-gray-600 text-white rounded-lg text-xs font-medium hover:bg-gray-700"
+                        onClick={() => generateReceipt(payment)}
                       >
                         Receipt
                       </button>
@@ -212,6 +243,12 @@ const ProjectTaskPayments = ({ weeklyTasks }) => {
           ))}
         </div>
       </div>
+
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={handleClose}
+        isPaymentSuccess={isPaymentSuccess}
+      />
     </div>
   );
 };

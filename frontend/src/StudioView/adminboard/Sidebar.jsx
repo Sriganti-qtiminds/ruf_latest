@@ -46,7 +46,6 @@ const navItemBaseStyle = {
 
 const navItems = [
   { label: 'Dashboard', icon: 'ri-dashboard-line' },
-  { label: 'Requests', icon: 'ri-git-pull-request-line' },
   { label: 'Projects', icon: 'ri-folder-line' },
   { label: 'Finance', icon: 'ri-money-dollar-circle-line' },
   { label: 'Vendors', icon: 'ri-store-line' },
@@ -56,7 +55,6 @@ const navItems = [
 ];
 
 const smNavItems = [
-  { label: 'Requests', icon: 'ri-git-pull-request-line' },
   { label: 'Projects', icon: 'ri-folder-line' },
 ];
 
@@ -75,7 +73,7 @@ function Sidebar({ selected, setSelected, role, isOpen, onToggle }) {
     }
     return style;
   };
-  const navigate = useNavigate();
+
   let itemsToShow = [];
   if (role === 'admin') {
     itemsToShow = navItems;
@@ -84,11 +82,7 @@ function Sidebar({ selected, setSelected, role, isOpen, onToggle }) {
   } else {
     return null;
   }
-  const onClickMain = () => {
-    navigate("/");
-    console.log("Navbar: Navigated to / via logo");
-  };
-
+  const navigate = useNavigate();
   const currentSidebarStyle = window.innerWidth <= 768 
     ? { 
         ...mobileSidebarStyle, 
@@ -120,18 +114,7 @@ function Sidebar({ selected, setSelected, role, isOpen, onToggle }) {
         )}
         
         <div style={{ fontWeight: 'bold', fontSize: '2rem', marginBottom: '32px', paddingLeft: '32px' }}>
-          <button
-            onClick={()=> navigate(`${STUDIO_BASE}`)}
-  	     style={{ 
-			background: 'none', 
-			border: 'none', 
-			color: 'inherit', 
-			cursor: 'pointer' 
-		  }}
->
-  Rufrent Studio
-
-          </button>
+          <button onClick={()=> navigate("/base/studio")}>Rufrent Studio</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', paddingRight: '16px' }}>
           {itemsToShow.map((item) => {
@@ -156,7 +139,7 @@ function Sidebar({ selected, setSelected, role, isOpen, onToggle }) {
                   {/* Show sub-options only if Projects is selected */}
                   {selected.startsWith('Projects') && (
                     <div style={{ marginLeft: '32px', display: 'flex', flexDirection: 'column', gap: '0px' }}>
-                      {[ 'Add Project', 'Weekly Payment Details'].map((sub, idx) => (
+                      {[ 'Add Project', 'Add Main Task', 'Add Subtask'].map((sub, idx) => (
                         <button
                           key={sub}
                           style={{

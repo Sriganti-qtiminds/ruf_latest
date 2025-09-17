@@ -1,358 +1,379 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 
-function WeeklyPaymentDetails() {
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
-  const [generating, setGenerating] = useState(false);
-  const [projectData, setProjectData] = useState([]);
-  const [weeklyPayments, setWeeklyPayments] = useState([]);
-  const [receipts, setReceipts] = useState([]);
-  const [expandedWeek, setExpandedWeek] = useState(null);
+export default function ProjectPlans() {
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [weeklyPlans, setWeeklyPlans] = useState([]);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [formData, setFormData] = useState({
+    pymt_pct: "",
+    week_invoice_date: "",
+    week_due_date: "",
+    addl_notes: "",
+  });
+  const [loadingInvoiceId, setLoadingInvoiceId] = useState(null);
 
-  // Fetch projects and weekly payments data
+  // Subtasks modal state
+  const [subtasks, setSubtasks] = useState([]);
+  const [showSubtasksModal, setShowSubtasksModal] = useState(false);
+
+  // --- Fetch all projects on mount ---
   useEffect(() => {
-    // Fetch projects
-    fetch(`${import.meta.env.VITE_API_URL}/project/getAllStudioProjects`)
+    fetch(`${import.meta.env.VITE_API_URL}/project/getAllstudioprojects`)
       .then((res) => res.json())
       .then((data) => {
-        const result = data.result || [];
-        setProjectData(Array.isArray(result) ? result : []);
+        const result = data.result || data.data || [];
+        setProjects(Array.isArray(result) ? result : []);
       })
-      .catch(() => setProjectData([]));
-
-    // Fetch weekly payments (using invoice data)
-    fetch(`${import.meta.env.VITE_API_URL}/studio/getinvoiceInfo`)
-      .then((res) => res.json())
-      .then((data) => {
-        const result = data.result || [];
-        setWeeklyPayments(Array.isArray(result) ? result : []);
-      })
-      .catch(() => setWeeklyPayments([]));
-
-    // Fetch receipts data
-    fetch(`${import.meta.env.VITE_API_URL}/studio/getreceiptInfo`)
-      .then((res) => res.json())
-      .then((data) => {
-        const result = data.result || [];
-        setReceipts(Array.isArray(result) ? result : []);
-      })
-      .catch(() => setReceipts([]));
+      .catch(() => setProjects([]));
   }, []);
 
-  // Helper to get the first payment due date for a project
-  const getFirstPaymentDueDate = (projectId) => {
-    const payments = weeklyPayments.filter(wp => String(wp.project_id) === String(projectId));
-    if (payments.length === 0) return '-';
-    // Sort by payment_due_date and pick the earliest
-    const sorted = payments.slice().sort((a, b) => new Date(a.payment_due_date) - new Date(b.payment_due_date));
-    return sorted[0].payment_due_date ? new Date(sorted[0].payment_due_date).toLocaleDateString() : '-';
+  // --- Fetch weekly plan for selected project ---
+  const handleSelectProject = (project) => {
+    setSelectedProject(project);
+    fetch(`${import.meta.env.VITE_API_URL}/userpayment/getAllUserPaymentPlans`)
+      .then((res) => res.json())
+      .then((data) => {
+        const res = data.result || data.data || [];
+        const plans = res.filter((plan) => plan.project_id === project.id);
+        setWeeklyPlans(plans);
+      })
+      .catch((err) => console.error("Error fetching payment plans:", err));
   };
 
-  // Helper to get all invoices for a project
-  const getInvoicesForProject = (projectId) => {
-    return weeklyPayments.filter(wp => String(wp.project_id) === String(projectId));
-  };
-
-  // Helper to get receipt information for an invoice
-  const getReceiptForInvoice = async (invoiceInfo) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/studio/getreceiptInfo`);
-      const data = await response.json();
-      const receipts = data.result || [];
-      return receipts.find(receipt => receipt.invoice_info === invoiceInfo);
-    } catch (error) {
-      console.error('Error fetching receipt:', error);
-      return null;
-    }
-  };
-
-  // Helper to calculate weekly payment amount
-  const calculateWeeklyPayment = (project) => {
-    if (!project) return 0;
-    const total = parseFloat(project.total_cost) || 0;
-    const signupPerc = parseFloat(project.signup_percentage) || 0;
-    const weeks = parseInt(project.no_of_weeks) || 0;
-    
-    if (weeks <= 0) return 0;
-    
-    const signupFee = (total * signupPerc) / 100;
-    const remaining = total - signupFee;
-    return Math.round((remaining / weeks) * 100) / 100;
-  };
-
-  // Helper to calculate due date for a week
-  const calculateDueDate = (project, weekNo) => {
-    if (!project || !project.signuptime) return null;
-    const signupDate = new Date(project.signuptime);
-    const dueDate = new Date(signupDate);
-    dueDate.setDate(dueDate.getDate() + (weekNo * 7)); // 7 days per week
-    return dueDate;
-  };
-
-  // Helper to get the expected weekly plan for a project
-  const getWeeklyPlan = (project) => {
-    if (!project) return [];
-    const weeks = parseInt(project.no_of_weeks, 10);
-    const total = parseFloat(project.total_cost);
-    const signupPerc = parseFloat(project.signup_percentage);
-    if (isNaN(weeks) || isNaN(total) || isNaN(signupPerc) || weeks <= 0) return [];
-    const signupFee = Math.round((total * signupPerc / 100) * 100) / 100;
-    const remaining = total - signupFee;
-    const perWeek = Math.round((remaining / weeks) * 100) / 100;
-    const plan = [];
-    for (let i = 1; i <= weeks; i++) {
-      plan.push({ week: i, amount: perWeek });
-    }
-    // Adjust last week for rounding errors
-    const sum = plan.reduce((acc, cur) => acc + cur.amount, 0);
-    if (sum !== remaining) {
-      plan[plan.length - 1].amount += (remaining - sum);
-    }
-    return plan;
-  };
-
-  // Handler for generating invoice (placeholder)
-  const handleGenerateInvoice = (selectedProject, nextWeek) => {
-    setGenerating(true);
-    setTimeout(() => {
-      setGenerating(false);
-      alert(`Invoice generated for Project ${selectedProject.id}, Week ${nextWeek}`);
-    }, 1000);
-  };
-
-  // Handler for generating all invoices for project_id 2
-  const handleGenerateAllInvoices = async () => {
-    setGenerating(true);
-    
-    try {
-      const projectId = 2;
-      const totalWeeks = selectedProject.no_of_weeks || 0;
-      const weeklyAmount = calculateWeeklyPayment(selectedProject);
-      
-      // Generate invoices for all weeks
-      const invoicePromises = [];
-      
-      for (let weekNo = 1; weekNo <= totalWeeks; weekNo++) {
-        const invoiceData = {
-          parameters: [
-            { key: "project_id", value: projectId },
-            { key: "week_no", value: weekNo },
-            { key: "weekly_cost_amount", value: weeklyAmount },
-            { key: "weekly_cost_percentage", value: 100 },
-            { key: "cgst_amount", value: Math.round(weeklyAmount * 0.09) }, // 9% CGST
-            { key: "sgst_amount", value: Math.round(weeklyAmount * 0.09) }, // 9% SGST
-            { key: "payer_category_id", value: 1 },
-            { key: "receiver_category_id", value: 1 },
-            { key: "payment_mode", value: 1 },
-            { key: "status", value: 1 }
-          ]
-        };
-        
-        const promise = fetch(`${import.meta.env.VITE_API_URL}/studio/addNewInvoiceRecord`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(invoiceData)
-        }).then(response => response.json());
-        
-        invoicePromises.push(promise);
-      }
-      
-      // Wait for all invoices to be created
-      const results = await Promise.all(invoicePromises);
-      
-      // Check for any errors
-      const errors = results.filter(result => !result.success);
-      if (errors.length > 0) {
-        console.error('Some invoices failed to create:', errors);
-        alert(`Generated ${results.length - errors.length} invoices. ${errors.length} failed.`);
-      } else {
-        alert(`Successfully generated ${results.length} invoices for Project ${projectId}`);
-      }
-      
-      // Refresh the data
-      window.location.reload();
-      
-    } catch (error) {
-      console.error('Error generating invoices:', error);
-      alert('Failed to generate invoices. Please try again.');
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  if (!selectedProjectId) {
-    return (
-      <div className="flex-1 p-6 bg-gray-100 overflow-auto">
-        <div className="text-3xl font-bold mb-8 text-center">Weekly Payment Details</div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-8 pb-8">
-          {projectData.map((project) => (
-            <div
-              key={project.id}
-              className="bg-white rounded-xl shadow p-6 cursor-pointer hover:scale-105 transition-transform border border-gray-100 flex flex-col gap-2 hover:border-blue-500 hover:bg-blue-50"
-              onClick={() => setSelectedProjectId(project.id)}
-            >
-              <div className="font-bold text-xl mb-1">{project.customer_flat || '-'}</div>
-              <div className="text-gray-700 text-base mb-1">Community: <span className="font-medium">{project.customer_community || '-'}</span></div>
-              <div className="text-gray-700 text-base mb-1">Customer: <span className="font-medium">{project.customer_id || '-'}</span></div>
-              <div className="text-gray-700 text-base mb-1">Address: <span className="font-medium">{project.customer_address || '-'}</span></div>
-              <div className="text-gray-700 text-base mb-1">Total Cost: <span className="font-medium">₹ {project.total_cost != null ? project.total_cost : '-'}</span></div>
-              <div className="text-gray-700 text-base mb-1">Total Weeks: <span className="font-medium">{project.no_of_weeks || '-'}</span></div>
-              <div className="text-gray-700 text-base mb-1">Due Date: <span className="font-medium">{getFirstPaymentDueDate(project.id)}</span></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+  // --- Amount calculation ---
+  function Amountpayable(totalAmount, percentage) {
+    return Number(((totalAmount * percentage) / 100).toFixed(2));
   }
 
-  // Show invoice details for selected project
-  const selectedProject = projectData.find(p => String(p.id) === String(selectedProjectId));
-  const invoices = getInvoicesForProject(selectedProjectId);
-  // Find the next week number
-  const lastInvoiceWeek = invoices.length > 0 ? Math.max(...invoices.map(inv => Number(inv.week_no))) : 0;
-  const nextWeek = lastInvoiceWeek + 1;
+  // --- Date formatting ---
+  function formatDateTime(date) {
+    if (!date) return "";
+    const d = new Date(date);
+    return isNaN(d.getTime())
+      ? ""
+      : d.toISOString().slice(0, 19).replace("T", " "); // YYYY-MM-DD HH:mm:ss
+  }
+
+  function formatDateInput(date) {
+    if (!date) return "";
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0]; // YYYY-MM-DD
+  }
+
+  // --- Generate Invoice ---
+  const generateInvoice = async (plan) => {
+    if (!selectedProject) return;
+    setLoadingInvoiceId(plan._id);
+
+    const payload = {
+      invoiceData: [
+        { key: "proj_id", value: selectedProject.id }, // use id
+        { key: "wk_no", value: plan.week_no },
+        { key: "wkly_cost_pct", value: plan.pymt_pct },
+        {
+          key: "wkly_cost_amt",
+          value: Amountpayable(selectedProject.total_cost, plan.pymt_pct),
+        },
+        { key: "pymt_due_date", value: formatDateTime(plan.week_due_date) },
+        { key: "pymt_act_date", value: formatDateTime(new Date()) },
+      ],
+    };
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/invoice/addinvoiceInfo`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        if (data.incomplete_subtasks && data.incomplete_subtasks.length > 0) {
+          setSubtasks(data.incomplete_subtasks);
+          setShowSubtasksModal(true);
+        }
+        throw new Error(data.message || "Failed to generate invoice");
+      }
+
+      alert("Invoice generated successfully!");
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      if (!showSubtasksModal) {
+        alert(error.message || "Failed to generate invoice.");
+      }
+    } finally {
+      setLoadingInvoiceId(null);
+    }
+  };
+
+  // --- Handle Edit ---
+  const handleEdit = (plan) => {
+    setEditingPlan(plan);
+    setFormData({
+      pymt_pct: plan.pymt_pct,
+      week_invoice_date: formatDateInput(plan.week_invoice_date),
+      week_due_date: formatDateInput(plan.week_due_date),
+      addl_notes: plan.addl_notes || "",
+    });
+  };
+
+  // --- Form Change ---
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // --- Save Edit ---
+const handleSave = async () => {
+  if (!editingPlan) return;
+
+  const payload = {
+    id: editingPlan.id,  
+    ...editingPlan,
+    pymt_pct: Number(formData.pymt_pct),
+    week_invoice_date: formData.week_invoice_date
+      ? `${formData.week_invoice_date} 00:00:00`
+      : editingPlan.week_invoice_date,
+    week_due_date: formData.week_due_date
+      ? `${formData.week_due_date} 00:00:00`
+      : editingPlan.week_due_date,
+    addl_notes: formData.addl_notes,
+  };
+
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/userpayment/updateUserPaymentPlan`, 
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) throw new Error("Update failed");
+
+    alert("Plan updated successfully!");
+    setEditingPlan(null);
+
+    // Update state locally (merge with existing)
+    setWeeklyPlans((prev) =>
+      prev.map((p) => (p.id === editingPlan.id ? { ...p, ...payload } : p))
+    );
+  } catch (error) {
+    console.error("Error updating plan:", error);
+    alert("Failed to update plan.");
+  }
+};
 
   return (
-    <div className="flex-1 p-6 bg-gray-100 overflow-auto">
-      <button
-        className="mb-6 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold shadow"
-        onClick={() => setSelectedProjectId(null)}
-      >
-        ← Back to Projects
-      </button>
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-6xl mx-auto mb-8">
-        <div className="text-2xl font-bold mb-2">{selectedProject.customer_flat || '-'}</div>
-        <div className="text-gray-700 text-base mb-1">Community: <span className="font-medium">{selectedProject.customer_community || '-'}</span></div>
-        <div className="text-gray-700 text-base mb-1">Customer: <span className="font-medium">{selectedProject.customer_id || '-'}</span></div>
-        <div className="text-gray-700 text-base mb-1">Address: <span className="font-medium">{selectedProject.customer_address || '-'}</span></div>
-        <div className="text-gray-700 text-base mb-1">Total Cost: <span className="font-medium">₹ {selectedProject.total_cost != null ? selectedProject.total_cost : '-'}</span></div>
-        <div className="text-gray-700 text-base mb-1">Total Weeks: <span className="font-medium">{selectedProject.no_of_weeks || '-'}</span></div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Projects</h1>
+
+      {/* --- Projects List --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {projects.map((project) => (
+          <div
+            key={project.id}
+            onClick={() => handleSelectProject(project)}
+            className="cursor-pointer border rounded-lg p-4 shadow hover:shadow-lg transition"
+          >
+            <h2 className="text-lg font-semibold mb-2">
+              {project.project_name}
+            </h2>
+            <p>
+              <strong>Flat:</strong> {project.cust_flat}
+            </p>
+            <p>
+              <strong>Address:</strong> {project.cust_address}
+            </p>
+            <p>
+              <strong>User:</strong> {project.user_name}
+            </p>
+            <p>
+              <strong>Total Cost:</strong> {project.total_cost}
+            </p>
+          </div>
+        ))}
       </div>
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-6xl mx-auto">
-        <h3 className="text-lg font-bold mb-2 text-center">Weekly Payment Schedule</h3>
-        <table className="w-full table-auto border text-base">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-2 text-left">Week No</th>
-              <th className="p-2 text-left">Due Date</th>
-              <th className="p-2 text-left">Amount</th>
-              <th className="p-2 text-left">CGST</th>
-              <th className="p-2 text-left">SGST</th>
-              <th className="p-2 text-left">Late Fees</th>
-              <th className="p-2 text-left">Status</th>
-              <th className="p-2 text-left">Payment Mode</th>
-              <th className="p-2 text-left">Invoice Info</th>
-              <th className="p-2 text-left">Receipt No</th>
-              <th className="p-2 text-left">Payment Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: selectedProject.no_of_weeks || 0 }, (_, index) => {
-              const weekNo = index + 1;
-              const invoice = invoices.find(inv => inv.week_no === weekNo);
-              const receipt = invoice ? receipts.find(rec => rec.invoice_info === invoice.invoice_info) : null;
-              const weeklyAmount = calculateWeeklyPayment(selectedProject);
-              const dueDate = calculateDueDate(selectedProject, weekNo);
-              const isExpanded = expandedWeek === weekNo;
-              return [
-                <tr key={weekNo} className={"border-b last:border-b-0 cursor-pointer" + (invoice ? " hover:bg-blue-50" : "")} onClick={() => invoice && setExpandedWeek(isExpanded ? null : weekNo)}>
-                  <td className="p-2 font-medium">{weekNo}</td>
-                  <td className="p-2">
-                    {invoice ? 
-                      (invoice.payment_due_date ? new Date(invoice.payment_due_date).toLocaleDateString() : '-') :
-                      (dueDate ? dueDate.toLocaleDateString() : '-')
-                    }
+
+      {/* --- Weekly Plan Table --- */}
+      {selectedProject && (
+        <div className="mt-8">
+          <h2 className="text-xl font-bold mb-4">
+            Weekly Plan for {selectedProject.project_name} (User:{" "}
+            {selectedProject.user_name})
+          </h2>
+
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border p-2">Week Number</th>
+                <th className="border p-2">Payment %</th>
+                <th className="border p-2">Amount</th>
+                <th className="border p-2">Invoice Date</th>
+                <th className="border p-2">Due Date</th>
+                <th className="border p-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weeklyPlans.map((plan) => (
+                <tr key={plan._id}>
+                  <td className="border p-2">
+                    {plan.week_no} {plan.addl_notes || ""}
                   </td>
-                  <td className="p-2">
-                    {invoice ? 
-                      `₹${invoice.weekly_cost_amount?.toLocaleString() || '-'}` :
-                      `₹${weeklyAmount.toLocaleString()}`
-                    }
+                  <td className="border p-2">{plan.pymt_pct}</td>
+                  <td className="border p-2">
+                    {Amountpayable(selectedProject.total_cost, plan.pymt_pct)}
                   </td>
-                  <td className="p-2">
-                    {invoice ? 
-                      `₹${invoice.cgst_amount?.toLocaleString() || '-'}` :
-                      '-'
-                    }
+                  <td className="border p-2">
+                    {formatDateInput(plan.week_invoice_date)}
                   </td>
-                  <td className="p-2">
-                    {invoice ? 
-                      `₹${invoice.sgst_amount?.toLocaleString() || '-'}` :
-                      '-'
-                    }
+                  <td className="border p-2">
+                    {formatDateInput(plan.week_due_date)}
                   </td>
-                  <td className="p-2">
-                    {invoice ? 
-                      `₹${invoice.late_fees?.toLocaleString() || '-'}` :
-                      '-'
-                    }
+                  <td className="border p-2 space-x-2">
+                    <button
+                      onClick={() => generateInvoice(plan)}
+                      disabled={loadingInvoiceId === plan._id}
+                      className={`px-3 py-1 rounded text-white ${
+                        loadingInvoiceId === plan._id
+                          ? "bg-gray-400"
+                          : "bg-blue-500 hover:bg-blue-600"
+                      }`}
+                    >
+                      {loadingInvoiceId === plan._id
+                        ? "Generating..."
+                        : "Generate Invoice"}
+                    </button>
+                    <button
+                      onClick={() => handleEdit(plan)}
+                      className="px-3 py-1 border rounded hover:bg-gray-100"
+                    >
+                      Edit
+                    </button>
                   </td>
-                  <td className="p-2">
-                    {invoice ? 
-                      invoice.status_code || '-' :
-                      'Pending'
-                    }
-                  </td>
-                  <td className="p-2">
-                    {invoice ? 
-                      invoice.payments_mode || '-' :
-                      '-'
-                    }
-                  </td>
-                  <td className="p-2">
-                    {invoice ? 
-                      invoice.invoice_info :
-                      '-'
-                    }
-                  </td>
-                  <td className="p-2">
-                    {receipt ? 
-                      receipt.receipt_no :
-                      '-'
-                    }
-                  </td>
-                  <td className="p-2">
-                    {receipt ? 
-                      (receipt.payment_date ? new Date(receipt.payment_date).toLocaleDateString() : '-') :
-                      '-'
-                    }
-                  </td>
-                </tr>,
-                (isExpanded && receipt) && (
-                  <tr key={weekNo + '-details'} className="bg-blue-50">
-                    <td colSpan={11} className="p-4">
-                      <div className="text-base font-semibold mb-2">Receipt Details</div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <div><span className="font-semibold">Receipt No:</span> {receipt.receipt_no}</div>
-                        <div><span className="font-semibold">Payment Date:</span> {receipt.payment_date ? new Date(receipt.payment_date).toLocaleDateString() : '-'}</div>
-                        <div><span className="font-semibold">Status:</span> {receipt.status_code || '-'}</div>
-                        <div><span className="font-semibold">Razorpay Info:</span> {receipt.razor_payment_info || '-'}</div>
-                        <div><span className="font-semibold">Amount:</span> ₹{receipt.weekly_cost_amount?.toLocaleString() || '-'}</div>
-                        <div><span className="font-semibold">CGST:</span> ₹{receipt.cgst_amount?.toLocaleString() || '-'}</div>
-                        <div><span className="font-semibold">SGST:</span> ₹{receipt.sgst_amount?.toLocaleString() || '-'}</div>
-                        <div><span className="font-semibold">Late Fees:</span> ₹{receipt.late_fees?.toLocaleString() || '-'}</div>
-                        <div><span className="font-semibold">Payment Mode:</span> {receipt.payment_mode || '-'}</div>
-                      </div>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* --- Edit Modal --- */}
+      {editingPlan && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-lg font-bold mb-4">
+              Edit Plan (Week {editingPlan.week_no})
+            </h2>
+
+            <label className="block mb-2">
+              Payment %:
+              <input
+                type="number"
+                name="pymt_pct"
+                value={formData.pymt_pct}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+              />
+            </label>
+
+            <label className="block mb-2">
+              Invoice Date:
+              <input
+                type="date"
+                name="week_invoice_date"
+                value={formData.week_invoice_date}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+              />
+            </label>
+
+            <label className="block mb-2">
+              Due Date:
+              <input
+                type="date"
+                name="week_due_date"
+                value={formData.week_due_date}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+              />
+            </label>
+
+            <label className="block mb-4">
+              Notes:
+              <input
+                type="text"
+                name="addl_notes"
+                value={formData.addl_notes}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+              />
+            </label>
+
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setEditingPlan(null)}
+                className="px-3 py-1 border rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Subtasks Modal --- */}
+      {showSubtasksModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-2/3">
+            <h2 className="text-lg font-bold mb-4 text-red-600">
+              Pending Subtasks — Invoice cannot be created
+            </h2>
+
+            <table className="w-full border-collapse border border-gray-300 mb-4">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-2">ID</th>
+                  <th className="border p-2">Sub Task</th>
+                  <th className="border p-2">Approval Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subtasks.map((task) => (
+                  <tr key={task.id}>
+                    <td className="border p-2">{task.id}</td>
+                    <td className="border p-2">{task.sub_task_name}</td>
+                    <td className="border p-2">
+                      {task.approval_status === 1 ? "Approved" : "Pending"}
                     </td>
                   </tr>
-                )
-              ];
-            })}
-          </tbody>
-        </table>
-        <div className="flex justify-end mt-6">
-          <button
-            className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 disabled:opacity-60"
-            onClick={() => handleGenerateInvoice(selectedProject, nextWeek)}
-            disabled={generating}
-          >
-            {generating ? 'Generating...' : `Generate Invoice for Week ${nextWeek}`}
-          </button>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowSubtasksModal(false)}
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
-
-export default WeeklyPaymentDetails; 

@@ -48,6 +48,7 @@ class S3Service {
       return [];
     }
   }
+   
 
   async uploadImages(files, uid, folderType) {
     let folderPath = `${folderType}/${uid}/images/`;
@@ -325,6 +326,41 @@ async uploadVideos(files, folderPath) {
       throw new Error("Failed to upload PDFs: " + error.message);
     }
   }
+async uploadToS3(files, basePath) {
+  try {
+    const uploadedFiles = [];
+
+    await Promise.all(
+      files.map(async (file) => {
+        const fileExtension = file.originalname.split(".").pop();
+        const cleanName = file.originalname.replace(/\s+/g, "_");
+        const filePath = `${basePath}/${cleanName}`; // e.g. studio/docs/proj05/myfile.pdf
+
+        await this.s3.send(
+          new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: filePath,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+          })
+        );
+
+        const fileUrl = `${process.env.S3_LOCATION}/${filePath}`;
+
+        uploadedFiles.push({
+         // S3 key
+          url: fileUrl,  // public URL
+        });
+      })
+    );
+
+    return uploadedFiles; 
+  } catch (error) {
+    throw new Error("Failed to upload files: " + error.message);
+  }
+}
+
+
 
   async getPDFUrls(folderPath) {
     if (!folderPath) {
@@ -464,7 +500,50 @@ async uploadVideos(files, folderPath) {
       throw new Error("Failed to list files in S3.");
     }
   }
- 
+  
+  
+ async getSubTaskMediaUrls(mediaPathObj) {
+    if (!mediaPathObj) {
+      return {
+        images: { before: [], after: [] },
+        videos: { before: [], after: [] },
+      };
+    }
+
+    const s3Client = this.s3;
+    const bucketName = this.bucketName;
+    const region = process.env.AWS_REGION;
+
+    const mediaTypes = ["images", "videos"];
+    const events = ["before", "after"];
+    const result = { images: { before: [], after: [] }, videos: { before: [], after: [] } };
+
+    try {
+      for (const type of mediaTypes) {
+        for (const evt of events) {
+          const folder = mediaPathObj[type]?.[evt]?.path;
+          if (!folder) continue;
+
+          const prefix = folder.endsWith("/") ? folder : folder + "/";
+          const data = await s3Client.send(
+            new ListObjectsV2Command({ Bucket: bucketName, Prefix: prefix })
+          );
+
+          if (data.Contents && data.Contents.length > 0) {
+            const urls = data.Contents.map(
+              (item) => `https://${bucketName}.s3.${region}.amazonaws.com/${item.Key}`
+            );
+            result[type][evt] = urls;
+          }
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error fetching sub-task media from S3:", error);
+      throw new Error("Failed to fetch media: " + error.message);
+    }
+  }
 
 
   async ensureFolderExists(folderPath) {
@@ -551,5 +630,93 @@ async uploadVideos(files, folderPath) {
       throw new Error("Failed to delete images: " + error.message);
     }
   }
+  
+  
+  async getSubTaskMediaUrls1(baseMediaPath) {
+  if (!baseMediaPath || typeof baseMediaPath !== "string") {
+    return {
+      images: { before: [], after: [] },
+      videos: { before: [], after: [] },
+    };
+  }
+
+  const bucketName = this.bucketName;
+  const region = process.env.AWS_REGION;
+
+  const paths = {
+    images: {
+      before: `${baseMediaPath}Images/before/`,
+      after: `${baseMediaPath}Images/after/`,
+    },
+    videos: {
+      before: `${baseMediaPath}Videos/before/`,
+      after: `${baseMediaPath}Videos/after/`,
+    },
+  };
+
+  const result = {
+    images: { before: [], after: [] },
+    videos: { before: [], after: [] },
+  };
+
+  try {
+    for (const type of Object.keys(paths)) {
+      for (const evt of Object.keys(paths[type])) {
+        const prefix = paths[type][evt];
+        const listCommand = new ListObjectsV2Command({
+          Bucket: bucketName,
+          Prefix: prefix,
+        });
+
+        const data = await this.s3.send(listCommand);
+
+        if (data.Contents && data.Contents.length > 0) {
+          result[type][evt] = data.Contents.map(
+            (item) =>
+              `https://${bucketName}.s3.${region}.amazonaws.com/${item.Key}`
+          );
+        }
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching media from S3:", error);
+    throw new Error("Failed to fetch media: " + error.message);
+  }
+}
+
+
+async getSubTaskMediaUrls(baseMediaPath) {
+  if (!baseMediaPath) {
+    return { images: { before: [], after: [] }, videos: { before: [], after: [] } };
+  }
+
+  const result = { images: { before: [], after: [] }, videos: { before: [], after: [] } };
+  const mediaTypes = ["images", "videos"];
+  const events = ["before", "after"];
+
+  try {
+    for (const type of mediaTypes) {
+      for (const evt of events) {
+        const folder = `${baseMediaPath}${type.charAt(0).toUpperCase() + type.slice(1)}/${evt}/`; // e.g. Images/before
+        const data = await this.s3.send(
+          new ListObjectsV2Command({ Bucket: this.bucketName, Prefix: folder })
+        );
+
+        if (data.Contents && data.Contents.length > 0) {
+          result[type][evt] = data.Contents.map(
+            (item) => `https://${this.bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.Key}`
+          );
+        }
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error("Error fetching sub-task media from S3:", error);
+    return result;
+  }
+}
+
 }
 module.exports = new S3Service();

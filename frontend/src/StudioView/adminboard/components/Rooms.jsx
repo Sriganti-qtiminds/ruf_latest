@@ -31,7 +31,7 @@ function Rooms() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/studio/getregionInfo`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/regions/getregionInfo`);
       if (!response.ok) {
         throw new Error('Failed to fetch rooms');
       }
@@ -71,67 +71,71 @@ function Rooms() {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle add/edit form submit
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
-    setSuccess('');
+const handleFormSubmit = async (e) => {
+  e.preventDefault();
+  setSubmitting(true);
+  setError('');
+  setSuccess('');
 
-    if (!form.region_desc || !form.region_cat || !form.budget_cat) {
-      setError('Region description, region category, and budget category are required fields');
-      setSubmitting(false);
-      return;
+  if (!form.region_desc || !form.region_cat || !form.budget_cat) {
+    setError('Region description, region category, and budget category are required fields');
+    setSubmitting(false);
+    return;
+  }
+
+  try {
+    const regionData = [
+      { key: "region_cat", value: parseInt(form.region_cat) || 1 },
+      { key: "budget_cat", value: parseInt(form.budget_cat) || 1 },
+      { key: "image_count", value: parseInt(form.image_count) || 0 },
+      { key: "region_desc", value: { Description: form.region_desc } }
+    ];
+
+    //  Add ID if editing
+    if (modalType === 'edit' && selectedRoom?.region_id) {
+      regionData.unshift({ key: "id", value: selectedRoom.region_id });
     }
 
-    try {
-      const regionData = [
-        { key: "region_desc", value: JSON.stringify({ Description: form.region_desc }) },
-        { key: "image_count", value: parseInt(form.image_count) || 0 },
-        { key: "region_cat", value: parseInt(form.region_cat) || 1 },
-        { key: "budget_cat", value: parseInt(form.budget_cat) || 1 }
-      ];
+    const url = modalType === 'add' 
+      ? `${import.meta.env.VITE_API_URL}/regions/addregionsInfo`
+      : `${import.meta.env.VITE_API_URL}/regions/updateregionInfo`;
 
-      const url = modalType === 'add' 
-        ? `${import.meta.env.VITE_API_URL}/studio/addregionInfo`
-        : `${import.meta.env.VITE_API_URL}/studio/updateregionInfo`;
+    const method = modalType === 'add' ? 'POST' : 'PUT';
 
-      const method = modalType === 'add' ? 'POST' : 'PUT';
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ regionData })
+    });
 
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ regionData })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${modalType} room`);
-      }
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setSuccess(`Room ${modalType === 'add' ? 'added' : 'updated'} successfully!`);
-        setShowModal(false);
-        fetchRooms(); // Refresh the list
-      } else {
-        throw new Error(data.message || `Failed to ${modalType} room`);
-      }
-    } catch (err) {
-      console.error(`Error ${modalType}ing room:`, err);
-      setError(`Failed to ${modalType} room. Please try again.`);
-    } finally {
-      setSubmitting(false);
+    if (!response.ok) {
+      throw new Error(`Failed to ${modalType} room`);
     }
-  };
+
+    const data = await response.json();
+
+    if (data.success) {
+      setSuccess(`Room ${modalType === 'add' ? 'added' : 'updated'} successfully!`);
+      setShowModal(false);
+      fetchRooms();
+    } else {
+      throw new Error(data.message || `Failed to ${modalType} room`);
+    }
+  } catch (err) {
+    console.error(`Error ${modalType}ing room:`, err);
+    setError(`Failed to ${modalType} room. Please try again.`);
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+
 
   // Handle edit button
   const handleEdit = (room) => {
     setSelectedRoom(room);
     setForm({
-      region_desc: room.region_description || '',
+      region_desc: room.region_description?.Description || '',
       image_count: room.images_count?.toString() || '',
       region_cat: room.region_cat?.toString() || '',
       budget_cat: room.budget_cat?.toString() || ''
@@ -156,7 +160,7 @@ function Rooms() {
     if (!selectedRoom) return;
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/studio/deleteregionInfo?id=${selectedRoom.region_id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/regions/deleteregionInfo?id=${selectedRoom.region_id}`, {
         method: 'DELETE'
       });
       
@@ -364,27 +368,40 @@ function Rooms() {
             </div>
             <div>
               <label className="block mb-1 font-semibold">Region Category *</label>
-              <input
+              <select
                 className="w-full border rounded-lg p-2"
-                type="number"
                 name="region_cat"
                 value={form.region_cat}
                 onChange={handleFormChange}
-                placeholder="Enter region category ID"
                 required
-              />
+              >
+                <option value="">Select region category</option>
+                <option value="1">Master</option>
+                <option value="2">Kids</option>
+                <option value="3">Guests</option>
+                <option value="4">Living</option>
+                <option value="5">Pooja</option>
+                <option value="6">Dining</option>
+                <option value="7">Kitchen</option>
+                <option value="8">Exteriors</option>
+                <option value="9">False Ceiling</option>
+                <option value="10">Utility</option>
+              </select>
             </div>
-            <div>
+              <div>
               <label className="block mb-1 font-semibold">Budget Category *</label>
-              <input
+              <select
                 className="w-full border rounded-lg p-2"
-                type="number"
                 name="budget_cat"
                 value={form.budget_cat}
                 onChange={handleFormChange}
-                placeholder="Enter budget category ID"
                 required
-              />
+              >
+                <option value="">Select budget category</option>
+                <option value="1">Elegant</option>
+                <option value="2">Luxury</option>
+                <option value="3">Premium</option>
+              </select>
             </div>
             <div>
               <label className="block mb-1 font-semibold">Image Count</label>

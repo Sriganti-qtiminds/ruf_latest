@@ -1,0 +1,461 @@
+{
+
+  "studio_main_tasks_info_count": {
+  "tbl_rediskey": "studio_main_tasks_records",
+  "tbl_name": "studio_main_tasks smt",
+  "tbl_nameadd": "studio_main_tasks",
+  "primary_key": "id",
+  "tbl_fields": [
+    "smt.id",
+    "smt.project_id",
+    "smt.main_task_name",
+    "smt.vendor_id",
+    "smt.start_date",
+    "smt.end_date",
+    "smt.task_cost",
+    "smt.sgst_pct",
+    "smt.cgst_pct",
+    "smt.total_task_cost",
+    "smt.signup_pct",
+    "sst.main_task",
+    "sst.approval_status",
+    "sst.sub_task_name",
+    "sst.week_no",
+    "sst.percent_complete"
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN studio_sub_tasks sst ON smt.id = sst.main_task"
+  ]
+}
+,
+"regions_info": {
+    "tbl_rediskey": "regions_info",
+    "tbl_name": "studio_regions sr",
+    "tbl_nameadd": "studio_regions",
+    "primary_key": "id",
+    "tbl_fields": [
+      "sr.id as region_id",
+      "sr.region_desc as region_description",
+      "sr.image_count as images_count",
+      "sr.region_cat",
+      "sr.budget_cat",
+      "src.region_cat as area_type",      
+      "sbc.budget_cat as budget_type"     
+    ],
+    "tbl_join_clause": [
+      "LEFT JOIN studio_region_cat src ON sr.region_cat = src.id",
+      "LEFT JOIN studio_budget_cat sbc ON sr.budget_cat = sbc.id"
+    ]
+    
+  },
+"invoices_info": {
+    "tbl_rediskey": "invoices_info",
+    "tbl_name": "studio_invoices si",
+    "tbl_nameadd": "studio_invoices",
+    "tbl_primary_key": "id",
+    "tbl_fields": [
+      "si.id",
+      "si.proj_id",
+      "si.wk_no",
+      "si.rcvr_cat_id",
+      "si.wkly_cost_pct",
+      "si.wkly_cost_amt",
+      "si.gst_cen_pct",
+      "si.gst_sta_pct",
+      "si.pen_amt",
+      "si.pyr_cat_id",
+      "si.pymt_due_date",
+      "si.pymt_act_date",
+      "si.inv_info",
+      "si.inv_status",
+      "sp.project_name",
+      "sup.amt_act",
+      "si.total_with_tax"
+    ],
+    "tbl_join_clause": [
+      "LEFT JOIN studio_party_action spa ON si.pyr_cat_id = spa.id",
+      "LEFT JOIN studio_party_action spl ON si.rcvr_cat_id = spl.id",
+      "LEFT JOIN studio_project sp ON si.proj_id = sp.id",
+      "LEFT JOIN st_current_status scs ON si.inv_status = scs.id",
+      "LEFT JOIN studio_user_payments sup ON si.id = sup.inv_id"
+    ]
+  },
+"testimonial_info": {
+    "tbl_rediskey": "testimonial_records",
+    "tbl_name": "dy_testimonial dyt",
+    "tbl_nameadd": "dy_testimonial",
+    "primary_key": "id",
+    "tbl_fields": [
+      "dyt.id",
+      "dyt.user_id",
+      "dyt.rating",
+      "dyt.image_data",
+      "dyt.display_name",
+      "dyt.description",
+      "dyt.current_status",
+      "dyt.testimonial_date",
+      "du.user_name",
+      "du.email_id",
+      "du.mobile_no",
+      "du.customer_id",
+      "sc.id AS city_id",
+      "sc.name AS city_name",
+      "sb.id AS builder_id",
+      "sb.name AS builder_name",
+      "scom.id AS community_id",
+      "scom.name AS community_name",
+      "spc.project_category AS project_category_name"  
+    ],
+    "tbl_join_clause": [
+      "LEFT JOIN dy_user du ON dyt.user_id = du.id",
+      "LEFT JOIN st_city sc ON dyt.city_id = sc.id",
+      "LEFT JOIN st_builder sb ON dyt.builder_id = sb.id",
+      "LEFT JOIN st_community scom ON dyt.community_id = scom.id",
+      "LEFT JOIN st_project_category spc ON dyt.project_category = spc.id"
+    ]
+  },
+"studio_vendors_info": {
+    "tbl_rediskey": "studio_vendors_records",
+    "tbl_name": "studio_vendors sv",
+    "tbl_nameadd": "studio_vendors",
+    "primary_key": "id",
+    "tbl_fields": [
+      "sv.id",
+      "sv.ven_cat_id",
+      "svc.ven_cat",  
+      "sv.ven_user_id",
+      "du1.user_name AS vendor_user_name",  
+      "sv.ven_address",
+      "sv.ven_firm_name",
+      "sv.ven_poc",
+      "sv.ven_pan_no",
+      "sv.ven_aadhaar_no",
+      "sv.ven_tin_no",
+      "sv.ven_registration_no",
+      "sv.ven_mobile",
+      "sv.ven_approved_date",
+      "sv.ven_approver_id",
+      "du2.user_name AS approver_user_name",  
+      "sv.ven_approval_status",
+      "sv.ven_validity_months",
+      "sv.ven_wht_rate",
+      "sv.sgst_pct",
+      "sv.cgst_pct", 
+      "sv.sign_pct"
+    ],
+    "tbl_join_clause": [
+      "LEFT JOIN studio_ven_cat svc ON sv.ven_cat_id = svc.id",
+      "LEFT JOIN dy_user du1 ON sv.ven_user_id = du1.id",
+      "LEFT JOIN dy_user du2 ON sv.ven_approver_id = du2.id"
+    ]
+  },
+
+"studio_projects_info": {
+  "tbl_rediskey": "studio_projects_records",
+  "tbl_name": "studio_project sp",
+  "tbl_nameadd": "studio_project",
+  "primary_key": "id",
+  "tbl_fields": [
+    "sp.id",
+    "sp.project_name",
+    "sp.cust_id",
+    "du.user_name AS customer_name",
+    "sp.cust_flat",
+    "sp.cust_community",
+    "sp.cust_address",
+    "sp.site_mgr_id",
+    "ds.user_name AS site_manager_name",
+    "bc.budget_cat",
+    "sp.weeks_planned",
+    "sp.weeks_total AS no_of_weeks",
+    "cs.status_code as current_status ",
+    "sp.total_cost",
+    "sp.total_paid",
+    "sp.total_balance",
+    "sp.signup_date AS signuptime",
+    "sp.documents_path",
+    "sp.signup_percentage",
+    "sp.tnt_start_date",
+    "sp.est_end_date",
+    "sp.act_end_date",
+    "sp.project_formatted_id"
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN dy_user du ON sp.cust_id = du.id",
+    "LEFT JOIN dy_user ds ON sp.site_mgr_id = ds.id",
+    "LEFT JOIN studio_budget_cat bc ON sp.budget_cat = bc.id",
+    "LEFT JOIN st_current_status cs ON sp.current_status = cs.id"
+  ]
+},
+"user_info": {
+  "tbl_rediskey": "studio_users_basic_info",
+  "tbl_name": "dy_user du",
+  "tbl_nameadd": "dy_user",
+  "primary_key": "id",
+  "tbl_fields": [
+    "du.id",
+    "du.user_name",
+    "du.email_id",
+    "du.role_id",
+    "du.project_category",
+    "du.rstatus",
+    "spc.project_category",
+    "sbp.billing_plan",
+    "sg.gender_type"
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN st_role sr ON sr.id = du.role_id",
+    "LEFT JOIN st_project_category spc ON spc.id = du.project_category",
+    "LEFT JOIN st_billing_plan sbp ON sbp.id = du.bill_plan",
+    "LEFT JOIN st_gender sg ON sg.id = du.gender_id"
+  ]
+},
+"studio_vendor_payments_info": {
+  "tbl_rediskey": "studio_vendor_payments_cache",
+  "tbl_name": "studio_vendor_payments svp",
+  "tbl_nameadd": "studio_vendor_payments",
+  "primary_key": "id",
+  "tbl_fields": [
+    "svp.id",
+    "svp.vendor_id",
+    "du.user_name AS vendor_user_name",
+    "svp.project_id",
+    "sp.project_name",
+    "svp.task_id",
+    "smt.main_task_name",
+    "svp.invoice_amount",
+    "svp.inv_no",
+    "svp.pymt_inv_date",
+    "svp.pymt_due_date",
+    "svp.pymt_status",
+    "scs.status_code AS payment_status_code",
+    "svp.nsub_tasks_planned",
+    "svp.nsub_task_completed",
+    "svp.vnd_pymt_mode",
+    "spm.payment_mode AS payment_mode_name",
+    "svp.reciept_no"
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN dy_user du ON svp.vendor_id = du.id",
+    "LEFT JOIN studio_project sp ON svp.project_id = sp.id",
+    "LEFT JOIN studio_main_tasks smt ON svp.task_id = smt.id",
+    "LEFT JOIN studio_payment_mode spm ON svp.vnd_pymt_mode = spm.id",
+    "LEFT JOIN st_current_status scs ON svp.pymt_status = scs.id"
+  ]
+}
+,
+"studio_user_payment_plan_info": {
+  "tbl_rediskey": "studio_user_payment_plan_records",
+  "tbl_name": "studio_user_payment_plan supp",
+  "tbl_nameadd": "studio_user_payment_plan",
+  "primary_key": "id",
+  "tbl_fields": [
+    "supp.id",
+    "supp.project_id",
+    "supp.week_no",
+    "supp.cust_id",
+    "supp.pymt_pct",
+    "supp.week_invoice_date",
+    "supp.week_due_date",
+    "s.id AS payment_status_id",
+    "supp.addl_notes",
+    "u.user_name AS customer_name",
+    "p.project_name",
+    "s.status_code AS payment_status_name",
+    "svp1.vendor_id",
+    "svp.task_id AS vendor_task_id"
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN dy_user u ON supp.cust_id = u.id",
+    "LEFT JOIN studio_project p ON supp.project_id = p.id",
+    "LEFT JOIN st_current_status s ON supp.payment_status = s.id",
+    "LEFT JOIN studio_vendor_payments svp ON svp.project_id = supp.project_id AND svp.task_id = svp.task_id",
+    "LEFT JOIN studio_vendor_payments svp1 ON svp.vendor_id = svp.vendor_id"
+  ]
+}
+,
+"studio_user_payments_info": {
+  "tbl_rediskey": "studio_user_payments_records",
+  "tbl_name": "studio_user_payments sp",
+  "tbl_nameadd": "studio_user_payments",
+  "primary_key": "id",
+  "tbl_fields": [
+    "sp.id AS userpayment_id",
+    "sp.inv_id",
+    "sp.inv_tot",
+    "sp.amt_act",
+    "sp.pymt_act_date",
+    "sp.rcv_id",
+    "sp.pymt_mode",
+    "sp.addl_info",
+    "sp.user_pymt_plan_id",
+    "si.wk_no",
+    "spm.payment_mode AS payment_mode_name",
+    "supp.pymt_pct AS user_payment_plan_value",
+    "stp.cust_id",
+    "stp.id AS project_id"
+
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN studio_invoices si ON sp.inv_id = si.id",
+    "LEFT JOIN studio_payment_mode spm ON sp.pymt_mode = spm.id",
+    "LEFT JOIN studio_user_payment_plan supp ON sp.user_pymt_plan_id = supp.id",
+    "LEFT JOIN studio_project stp ON supp.project_id = stp.id"
+  ]
+}
+,
+"studio_user_payments_info_week": {
+  "tbl_rediskey": "studio_user_payments_records",
+  "tbl_name": "studio_user_payments sp",
+  "tbl_nameadd": "studio_user_payments",
+  "tbl_primary_key": "id",
+  "tbl_fields": [
+    "sp.id as userpayment_id",
+    "sp.inv_id",
+    "sp.inv_tot",
+    "sp.amt_act",
+    "sp.pymt_act_date",
+    "sp.rcv_id",        
+    "sp.pymt_mode",
+    "sp.addl_info",
+    "sp.user_pymt_plan_id",
+    "supp.cust_id",
+    "smt.main_task_name",
+    "sst.media_path",
+    "sst.approval_status",
+    "sst.main_task",
+    "sst.week_no",
+    "sst.id as subtask_id",
+     "stp.id as project_id",
+    "stp.project_name"  
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN studio_user_payment_plan supp ON sp.user_pymt_plan_id = supp.id",
+    "LEFT JOIN studio_project stp ON supp.project_id = stp.id",  
+    "LEFT JOIN studio_main_tasks smt ON supp.project_id = smt.project_id",
+    "LEFT JOIN studio_sub_tasks sst ON smt.id = sst.main_task"
+  ]
+},
+"studio_main_tasks_info": {
+  "tbl_rediskey": "studio_main_tasks_records",
+  "tbl_name": "studio_main_tasks smt",
+  "tbl_nameadd": "studio_main_tasks",
+  "primary_key": "id",
+  "tbl_fields": [
+    "smt.id",
+    "sp.id as project_id",    
+    "sp.project_name",    
+    "smt.main_task_name",
+    "du.user_name as vendor_name",
+    "smt.task_cost",
+    "smt.main_task_formatted_id",
+    "smt.vendor_id"
+     
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN studio_project sp on smt.project_id = sp.id",
+    "LEFT JOIN dy_user du ON smt.vendor_id = du.id" ,
+     "LEFT JOIN studio_sub_tasks sst ON  sst.main_task=smt.id"
+   
+
+  ]
+},
+"studio_sub_tasks_info1": {
+  "tbl_rediskey": "studio_sub_tasks_records",
+  "tbl_name": "studio_sub_tasks sst",
+  "tbl_nameadd": "studio_sub_tasks",
+  "primary_key": "id",
+  "tbl_fields": [
+    "sst.id",
+    "sst.main_task",
+    "sst.vendor_id",
+    "sst.percent_complete",
+    "sst.approver_id",
+    "sst.media_path",
+    "sst.approval_status",
+    "sst.sub_task_name",
+    "sst.sub_task_description",
+    "sst.start_date",
+    "sst.end_date",
+    "sst.week_no",
+    "du.user_name AS approver_name",
+    "dv.user_name AS vendor_name",
+    "sm.main_task_name",
+    "scs.status_category AS approval_status_name"
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN dy_user du ON sst.approver_id = du.id",
+    "LEFT JOIN dy_user dv ON sst.vendor_id = dv.id",
+    "LEFT JOIN studio_main_tasks sm ON sst.main_task = sm.id",
+    "LEFT JOIN st_current_status scs ON sst.approval_status = scs.id"
+  ]
+},
+"studio_sub_tasks_info": {
+  "tbl_rediskey": "studio_sub_tasks_records",
+  "tbl_name": "studio_sub_tasks sst",
+  "tbl_nameadd": "studio_sub_tasks",
+  "primary_key": "id",
+  "tbl_fields": [
+    "sst.id",
+    "sst.main_task",
+    "sst.week_no",
+    "sst.vendor_id",
+   
+    "sst.percent_complete",
+    "sst.approver_id",
+   "sst.sub_task_formatted_id",
+    
+    "sst.media_path",
+    "sst.approval_status",
+    "sst.sub_task_name",
+    "sst.sub_task_description",    
+    "smt.project_id",
+    "sp.project_name",
+    "sp.cust_id",
+    "smt.main_task_name"
+    
+    
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN studio_main_tasks smt ON sst.main_task = smt.id",
+     "LEFT JOIN studio_project sp ON smt.project_id = sp.id"    
+  ]
+  
+},
+"studio_sub_tasks_info_count": {
+  "tbl_rediskey": "studio_sub_tasks_records",
+  "tbl_name": "studio_sub_tasks sst",
+  "tbl_nameadd": "studio_sub_tasks",
+  "primary_key": "id",
+  "tbl_fields": [
+    "sst.id",
+    "sst.main_task",
+    "sst.week_no",
+    "sst.vendor_id",
+   
+    "sst.percent_complete",
+    "sst.approver_id",
+    
+    "sst.media_path",
+    "sst.approval_status",
+    "sst.sub_task_name",
+    "sst.sub_task_description",
+    "sst.start_date",
+    "sst.end_date",
+    "sp.id AS project_id",
+    "sp.project_name",
+    "sp.cust_id",
+    "smt.main_task_name",
+    "smt.id"
+  ],
+  "tbl_join_clause": [
+    "LEFT JOIN studio_main_tasks smt ON sst.main_task = smt.id",
+     "LEFT JOIN studio_project sp ON smt.project_id = sp.id"
+
+
+
+    
+  ]
+}
+
+}

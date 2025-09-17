@@ -182,3 +182,55 @@ function Testimonials() {
 }
 
 export default Testimonials; 
+
+
+
+
+{/* <div className="bg-white rounded-xl shadow-lg p-3 border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800">Weekly Payment Plan</h3>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                {(() => {
+                  const projectId = (hoveredProject || lastHoveredProject)?.id;
+                  const plans = paymentPlans
+                    .filter(p => p.project_id?.toString() === projectId?.toString())
+                    .sort((a, b) => (a.week_no ?? 0) - (b.week_no ?? 0));
+                  
+                  if(!plans.length) {
+                    const project = hoveredProject || lastHoveredProject;
+
+                    if (!project) {
+                      return <div className="text-gray-500">No weekly payment plan available.</div>;
+                    }
+
+                    const weeks =
+                      project.no_of_weeks ||
+                      project.weeks_total ||
+                      project.weeks_planned ||
+                      0;
+
+                    const signupPct = parseFloat(
+                      (project.signup_percentage || "0").toString().replace("%", "")
+                    );
+
+                    const planProject = {
+                      no_of_weeks: weeks > 0 ? weeks : 1, // default to 1 to avoid breaking distribution
+                      project_id: project.id,
+                      cust_id: project.cust_id,
+                      signup_percentage: isNaN(signupPct) ? 0 : signupPct,
+                      signup_date: project.signup_date,
+                    };
+
+                    return (
+                      <div className="space-y-2">
+                        <div className="text-gray-500">
+                          No weekly payment plan available. Create one:
+                        </div>
+                        <ProjectWeekDistribution project={planProject} />
+                      </div>
+                    );
+                  } */}
+
+

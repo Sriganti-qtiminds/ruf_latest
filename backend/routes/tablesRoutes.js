@@ -18,10 +18,10 @@ const {
 // curd Initialization
 
 const {
-  AddNewRecord,
-  GetRecords,
-  UpdateRecord,
-  DeleteRecord,
+  addNewRecord,
+  getRecords,
+  updateRecord,
+  deleteRecord,
 } = require("../controllers/curdController");
 
 // fm Initialization
@@ -65,10 +65,10 @@ const adminUserManagement = new AdminUserManagement();
 
 // curd
 
-const addNewRecordController = new AddNewRecord();
-const getRecordsController = new GetRecords();
-const updateRecordController = new UpdateRecord();
-const deleteRecordController = new DeleteRecord();
+const addNewRecordController = new addNewRecord();
+const getRecordsController = new getRecords();
+const updateRecordController = new updateRecord();
+const deleteRecordController = new deleteRecord();
 
 // fm
 const fmController = new FMController();

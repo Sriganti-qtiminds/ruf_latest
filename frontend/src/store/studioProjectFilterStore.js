@@ -1,24 +1,36 @@
-import { create } from 'zustand';
-import { fetchStudioProjects } from './apiService';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { fetchAllStudioProjects } from "../services/studioapiservices";
 
-const useStudioProjectStore = create((set) => ({
-  projects: [],
+const useStudioProjectsStore = create(
+  persist(
+    (set, get) => ({
+      projects: [],
+      counts: { pending: 0, completed: 0, total: 0 },
+      loading: false,
+      error: null,
 
-  // Actions
-  fetchProjects: async (cust_id = null, isAdmin = false) => {
-    try {
-      // If isAdmin is true, fetch all projects (no cust_id filter)
-      const projectData = await fetchStudioProjects(null, isAdmin ? null : cust_id);
-      set({ projects: projectData });
-    } catch (error) {
-      console.error('Error fetching studio projects:', error);
-      set({ projects: [] }); // Clear projects on error
+      // Fetch projects and save to state + localStorage
+      getProjects: async (params = {}) => {
+        set({ loading: true, error: null });
+        try {
+          const data = await fetchAllStudioProjects(params);
+          set({
+            projects: data.projects || [],
+            counts: data.counts || { pending: 0, completed: 0, total: 0 },
+            loading: false,
+          });
+        } catch (err) {
+          set({ error: err.message, loading: false });
+        }
+      },
+    }),
+    {
+      name: "studio-projects-storage", // key for localStorage
     }
-  },
+  )
+);
 
-  resetStore: () => {
-    set({ projects: [] }, true);
-  },
-}));
+export default useStudioProjectsStore;
 
-export default useStudioProjectStore;
+

@@ -12,6 +12,11 @@ export const apiPrefixes = {
   test: "test",
   regions: "regions",
   crud: "", 
-  project:"project"
+  project:"project",
+  maintask:"maintask",
+  subtask:"subtask",
+  payment:"payment",
+  invoice:"invoice",
+
   
 };

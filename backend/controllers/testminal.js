@@ -12,7 +12,7 @@ const redis = require("../config/redis"); // Import configuration
 const { v4: uuidv4 } = require("uuid");
 const paginate = require("../utils/pagination");
 const TransactionController = require("../utils/transaction");
-const config = require("../jsonfiles/rooms_info.json");
+const config = require("../jsonfiles/studio_info.json");
 const CurdController = require("./curdController");
 
 class testimonialController extends BaseController {
@@ -23,7 +23,7 @@ class testimonialController extends BaseController {
     const fieldValues = { ...req.body };
     const file = req.file;
 
-    // ✅ Step 1: Required field checks
+    // Step 1: Required field checks
     const requiredFields = [
       "user_id",
       "rating",
@@ -49,7 +49,7 @@ class testimonialController extends BaseController {
       }
     }
 
-    // ✅ Step 2: Validate number fields
+    // Step 2: Validate number fields
     const numericFields = [
       "rating",
       "city_id",
@@ -82,7 +82,7 @@ class testimonialController extends BaseController {
       });
     }
 
-    // ✅ Step 3: Upload image (if present)
+    // Step 3: Upload image (if present)
     if (file) {
       const imagePath = await S3Service.uploadImage(file, fieldValues.user_id, "testimonial_images");
       if (!imagePath) {
@@ -91,7 +91,7 @@ class testimonialController extends BaseController {
       fieldValues.image_data = imagePath;
     }
 
-    // ✅ Step 4: Add testimonial_date if not passed
+    // Step 4: Add testimonial_date if not passed
     if (!fieldValues.testimonial_date) {
       const now = new Date();
       fieldValues.testimonial_date = now.toISOString().slice(0, 19).replace("T", " ");
@@ -105,10 +105,10 @@ class testimonialController extends BaseController {
     curd.dbService.connection = connection;
 
     const config = {
-      jsonfilename: "rooms_info.json",
+      jsonfilename: "studio_info.json",
       configKey: "testimonial_info",
       operationType: "insert",
-      fieldValues
+      fieldValues,
     };
 
     const dbResponse = await curd.executeProcedure({ body: config });
@@ -124,21 +124,12 @@ class testimonialController extends BaseController {
 
     await TransactionController.commitTransaction(connection);
 
-//Step 6: Update Redis
-const redisKey = "testimonial_records";
-const cached = await redis.get(redisKey);
-let testimonials = cached ? JSON.parse(cached) : [];
-
-const newTestimonial = { id: insertId, ...fieldValues };
-
-// Only add to cache if approved (status = 3)
-if (newTestimonial.current_status == 3) {
-  testimonials.push(newTestimonial);
-}
-
-// Save updated list back to Redis
-await redis.set(redisKey, JSON.stringify(testimonials), "EX", 3600);
-
+    // Step 6: Update Redis
+    const redisKey = "testimonial_records";
+    const cached = await redis.get(redisKey);
+    const testimonials = cached ? JSON.parse(cached) : [];
+    const newTestimonial = { id: insertId, ...fieldValues };
+    await redis.set(redisKey, JSON.stringify([...testimonials, newTestimonial]));
 
     return res.status(201).json({
       success: true,
@@ -164,47 +155,42 @@ await redis.set(redisKey, JSON.stringify(testimonials), "EX", 3600);
     }
   }
 }
+
 async getNewtestimonialRecord(req, res) {
   const { id } = req.query;
-  const redisKey = "testimonial_records"; 
+  const redisKey = "testimonial_records"; // Should match the one in metadata.json
   const curd = new CurdController.UniversalProcedure();
 
   try {
+    // Step 1: Try Redis cache
     let cached = await redis.get(redisKey);
-
     if (cached) {
       const parsed = JSON.parse(cached);
-      const filtered = parsed.filter(
-        item => item.current_status == 3 && (!id || item.id == id)
-      );
+      const filtered = parsed.filter(item => item.current_status == 3 && (!id || item.id == id));
 
-      if (filtered.length > 0) {
-        console.log(`Returning ${filtered.length} testimonials from cache`);
-        return res.status(200).json({
-          message: "Testimonial data retrieved from cache successfully.",
-          result: filtered
+      if (id && filtered.length === 0) {
+        return res.status(404).json({
+          error: "No testimonial found for the provided ID (from cache)."
         });
-      } else {
-        console.log("No matching testimonials in cache — refreshing from DB...");
       }
-    } else {
-      console.log(" Cache empty — fetching from DB...");
+
+      return res.status(200).json({
+        message: "Testimonial data retrieved from cache successfully.",
+        result: filtered
+      });
     }
 
-    // --- Step 2: Query DB ---
-    const whereCondition = `dyt.current_status = 3${
-      id ? ` AND dyt.id = ${db.escape(id)}` : ""
-    }`;
+    // Step 2: Fallback to DB using UniversalProcedure
+    const whereCondition = `dyt.current_status = 3${id ? ` AND dyt.id = ${db.escape(id)}` : ""}`;
 
     req.body = {
-      jsonfilename: "rooms_info.json",
-      configKey: "testimonial_info",
+      jsonfilename: "studio_info.json",
+      configKey: "testimonial_info", // 👈 this must match the key in metadata.json
       operationType: "select",
-      whereclause: whereCondition
+      whereclause: whereCondition,
     };
 
-    const dbResponse = await curd.executeProcedure(req, res);
-    console.log(" DB Response:", dbResponse?.result);
+    const dbResponse = await curd.executeProcedure(req,res);
 
     if (!dbResponse || !dbResponse.result || dbResponse.result.length === 0) {
       return res.status(404).json({
@@ -227,25 +213,27 @@ async getNewtestimonialRecord(req, res) {
       phone: item.mobile_no
     }));
 
-    // --- Step 3: Save fresh results to Redis ---
-    await redis.set(redisKey, JSON.stringify(dbResponse.result), "EX", 3600);
+    // Step 3: Save to Redis for future use
+    await redis.set(redisKey, JSON.stringify(dbResponse.result), "EX", 3600); // 1 hour
 
     return res.status(200).json({
       message: "Testimonial data retrieved from database successfully.",
       result
     });
+  }catch (error) {
+  console.error("Error adding testimonial:", error.message);
 
-  } catch (error) {
-    console.error("Error fetching testimonials:", error.message);
+ 
 
-    if (!res.headersSent) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to get testimonial data.",
-        error: error.message
-      });
-    }
+  // Only respond if no response was sent earlier
+  if (!res.headersSent) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add testimonial entry.",
+      error: error.message
+    });
   }
+}
 }
 
 async getAllTestimonialRecords(req, res) {
@@ -254,7 +242,7 @@ async getAllTestimonialRecords(req, res) {
   const curd = new CurdController.UniversalProcedure();
 
   try {
-    //  Case 1: Check Redis Cache (only if `id` is passed and no other filters)
+    // Case 1: Check Redis Cache (only if `id` is passed and no other filters)
     if (id) {
       const cached = await redis.get(redisKey);
       if (cached) {
@@ -280,10 +268,10 @@ async getAllTestimonialRecords(req, res) {
 
     // ✅ Fallback to DB
     req.body = {
-      jsonfilename: "rooms_info.json",
+      jsonfilename: "studio_info.json",
       configKey: "testimonial_info",
       operationType: "select",
-      whereclause: whereClauseString
+      whereclause: whereClauseString,
     };
 
     const dbResponse = await curd.executeProcedure(req);
@@ -294,7 +282,7 @@ async getAllTestimonialRecords(req, res) {
       });
     }
 
-    // ✅ Format result
+    // Format result
     const result = dbResponse.result.map(item => ({
       id: item.id,
       user_id: item.user_id,
@@ -313,7 +301,7 @@ async getAllTestimonialRecords(req, res) {
       image_data: item.image_data
     }));
 
-    // ✅ Set cache only if it's a full fetch (no filters)
+    // Set cache only if it's a full fetch (no filters)
     if (!id) {
       await redis.set(redisKey, JSON.stringify(result), "EX", 3600);
     }
@@ -346,10 +334,10 @@ async  deleteTestimonialRecord(req, res) {
 
   try {
     req.body = {
-      jsonfilename: "rooms_info.json",
+      jsonfilename: "studio_info.json",
       configKey: "testimonial_info",
       operationType: "delete",
-      whereclause: `id = ${db.escape(id)}` // ✅ No alias here
+      whereclause: `id = ${db.escape(id)}`, // ✅ No alias here
     };
 
     const dbResponse = await curd.executeProcedure(req); // no `res` here
@@ -402,14 +390,14 @@ async updateTestimonialRecord(req, res) {
   const redisKey = "testimonial_records"; // Should match the JSON metadata
   const curd = new CurdController.UniversalProcedure();
 
-  // ✅ Step 1: Validate ID
+  // Step 1: Validate ID
   if (!id) {
     return res.status(400).json({
       error: "Missing 'id' for update operation."
     });
   }
 
-  // ✅ Step 2: Collect update fields dynamically
+  // Step 2: Collect update fields dynamically
   const updateFields = {};
   if (rating !== undefined) updateFields.rating = rating;
   if (image_data !== undefined) updateFields.image_data = image_data;
@@ -424,13 +412,13 @@ async updateTestimonialRecord(req, res) {
   }
 
   try {
-    // ✅ Step 3: Use UniversalProcedure for update
+    // Step 3: Use UniversalProcedure for update
     req.body = {
-      jsonfilename: "rooms_info.json",  // ✅ Use correct JSON file
+      jsonfilename: "studio_info.json", // ✅ Use correct JSON file
       configKey: "testimonial_info",
       operationType: "update",
       updatekeyvaluepairs: updateFields,
-      whereclause: `id = ${db.escape(id)}`
+      whereclause: `id = ${db.escape(id)}`,
     };
 
     const dbResponse = await curd.executeProcedure(req);

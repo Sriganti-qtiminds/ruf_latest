@@ -247,12 +247,12 @@ export default function Dashboard() {
                         <div className="flex items-center">
                           <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
                             <div
-                              className={`h-2 rounded-full ${getProgressColor(project.weeks_completed, project.weeks_total)}`}
-                              style={{ width: `${project.weeks_total ? (project.weeks_completed / project.weeks_total) * 100 : 0}%` }}
+                              className={`h-2 rounded-full ${getProgressColor(project.weeks_completed, project.no_of_weeks)}`}
+                              style={{ width: `${project.no_of_weeks ? (project.weeks_completed / project.no_of_weeks) * 100 : 0}%` }}
                             ></div>
                           </div>
                           <span className="text-sm text-gray-600">
-                            {project.weeks_completed}/{project.weeks_total || '—'}
+                            {project.weeks_completed}/{project.no_of_weeks || '—'}
                           </span>
                         </div>
                         <div className="text-xs text-gray-500 mt-1">

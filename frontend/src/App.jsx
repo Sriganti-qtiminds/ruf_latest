@@ -2,10 +2,12 @@
 
 
 
+
+
+
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
-
 
 // Route Constants
 import {
@@ -50,12 +52,20 @@ import Dashboard from "./AdminView/components/DashboardView";
 import { PropertyListings } from "./AdminView/components/PropertyListingsView";
 import Requests from "./AdminView/components/RequestsView";
 import StaffAssignment from "./AdminView/components/StaffAssignemntView";
-
 import Communities from "./AdminView/components/AddCommunityView/CommunityPage";
 import UserManagement from "./AdminView/components/UserManagementView";
 import DBTables from "./AdminView/components/DBTables";
 import Reviews from "./AdminView/components/Reviews";
 import AuthModal from "./components/CommonViews/AuthModalView";
+
+// Import Studio Components
+import StudioUserLayout from "./StudioView/layout/StudioUserLayout";
+import StudioLandingView from "./StudioView/components/InitialLandingView";
+import StudioDashboard from "./StudioView/components/InitialLandingView/StudioDashboard";
+import ProjectStatus from "./StudioView/components/ProjectStatus";
+import PaymentsDocsPage from "./StudioView/components/StdDasshboard/ProjectCards/PaymentDocs";
+import AdminBoard from "./StudioView/adminboard/AdminBoard";
+import VendorApp from "./StudioView/StudioVendor/CommonViews/StudioVendorApp";
 
 // Protected Route
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -64,13 +74,8 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import ChatBot from "./components/CommonViews/ChatBot";
 
 import FooterPage from "./UserView/components/InitialLandingView/FooterViews/FooterPage";
-import StudioUserLayout from "./StudioView/layout/StudioUserLayout";
-import StudioLandingView from "./StudioView/components/InitialLandingView";
-import StudioDashboard from "./StudioView/components/InitialLandingView/StudioDashboard";
-import ProjectStatus from "./StudioView/components/ProjectStatus";
 
 import "./App.css";
-import AdminBoard from "./StudioView/adminboard/AdminBoard";
 
 const App = () => {
   const navigate = useNavigate();
@@ -78,11 +83,10 @@ const App = () => {
   const [intendedPath, setIntendedPath] = useState(null);
 
   useEffect(() => {
-   
+    // Handle modal and path logic if needed
   }, [isModalOpen, intendedPath]);
 
   const onCloseModal = () => {
-   
     setIsModalOpen(false);
     setIntendedPath(null);
     navigate("/");
@@ -115,18 +119,16 @@ const App = () => {
           <Route path="studioDashboard" element={<StudioDashboard />} />
           <Route path="projectStatus" element={<ProjectStatus />} />
           <Route path="profile" element={<ProfileView />} />
+          <Route path="projectPaymentsDocs" element={<PaymentsDocsPage />} />
+          <Route element={<ProtectedRoute roles={["Vendor"]} {...passProps} />}>
+            <Route path="vendor" element={<VendorApp />} />
+          </Route>
         </Route>
 
         {/* User Routes */}
-    
         <Route path={`${RENTALS_BASE}`} element={<UserLayout {...passProps} />}>
-
           <Route index element={<UserLandingView />} />
-
-          {/* Protect only the specific child routes */}
-          <Route
-            element={<ProtectedRoute roles={["User", "Admin", "RM", "FM"]} {...passProps} />}
-          >
+          <Route element={<ProtectedRoute roles={["User", "Admin", "RM", "FM"]} {...passProps} />}>
             <Route path="mylistings" element={<MyListingsView />} />
             <Route path="postProperties" element={<PostPropertiesView />} />
             <Route path="myfavorites" element={<FavoritesView />} />
@@ -136,15 +138,12 @@ const App = () => {
           </Route>
         </Route>
 
-
         {/* Common Routes */}
-        <Route
-          element={<ProtectedRoute roles={["RM", "Admin"]} {...passProps} />}
-        >
+        <Route element={<ProtectedRoute roles={["RM", "Admin"]} {...passProps} />}>
           <Route path={ENQUIRIES_PATH} element={<EnquiriesView />} />
         </Route>
-        <Route element={<ProtectedRoute roles={["Admin"]}/>}>
-          <Route path={"/base/studio/AdminBoard"} element={<AdminBoard/>} />
+        <Route element={<ProtectedRoute roles={["Admin"]} />}>
+          <Route path={"/base/studio/AdminBoard"} element={<AdminBoard />} />
         </Route>
 
         {/* RM Route */}
@@ -192,4 +191,3 @@ App.propTypes = {
 };
 
 export default App;
-

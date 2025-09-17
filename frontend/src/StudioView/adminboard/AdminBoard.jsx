@@ -7,7 +7,8 @@ import Users from "./components/Users";
 import Rooms from "./components/Rooms";
 import Testimonials from "./components/Testimonials";
 import AddProject from "./components/Project/AddProject";
-import Payment from "./components/Project/Payment";
+import AddMainTask from "./components/Project/AddMainTask";
+import AddSubtask from "./components/Project/AddSubtask";
 import WeeklyPaymentDetails from "./components/Project/WeeklyPaymentDetails";
 import VendorInvoices from "./components/Finance/VendorInvoices";
 import CheckPayment from "./components/Finance/CheckPayment";
@@ -57,6 +58,12 @@ function AdminBoard() {
       case 'Projects:Add Project':
         ContentComponent = <AddProject />;
         break;
+      case 'Projects:Add Main Task':
+        ContentComponent = <AddMainTask />;
+        break;
+      case 'Projects:Add Subtask':
+        ContentComponent = <AddSubtask />;
+        break;
       case 'Projects:Payment':
         ContentComponent = <Payment />;
         break;
@@ -104,6 +111,12 @@ function AdminBoard() {
         break;
       case 'Projects:Add Project':
         ContentComponent = <AddProject />;
+        break;
+      case 'Projects:Add Main Task':
+        ContentComponent = <AddMainTask />;
+        break;
+      case 'Projects:Add Subtask':
+        ContentComponent = <AddSubtask />;
         break;
       case 'Projects:Payment':
         ContentComponent = <Payment />;

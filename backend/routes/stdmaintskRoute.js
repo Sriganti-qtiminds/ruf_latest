@@ -12,6 +12,12 @@ router.post("/addNewStudioMainTask",(req,res)=>
 router.get("/getAllStudioMainTasks",(req,res)=>
   studiomaintaskcontroller.getAllStudioMainTasks(req,res)
 );
+
+router.get("/getAllStudioMainTaskscount",(req,res)=>
+  studiomaintaskcontroller.getAllStudioMainTaskscount(req,res)
+);
+
+
 router.put("/updateStudioMainTask",(req,res)=>
   studiomaintaskcontroller.updateStudioMainTask(req,res)
 );

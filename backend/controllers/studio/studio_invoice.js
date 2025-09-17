@@ -9,10 +9,11 @@ const redis = require("../../config/redis");
 const { v4: uuidv4 } = require("uuid");
 const paginate = require("../../utils/pagination");
 const TransactionController = require("../../utils/transaction");
-const config = require("../../jsonfiles/rooms_info.json");
+const config = require("../../jsonfiles/studio_info.json");
 const { generateRequestBody } = require("../../utils/requestFactory");
 const CurdController = require("../curdController");
 class StudioinvoiceController extends BaseController {
+
 async addNewInvoiceRecord(req, res) {
   let connection;
   try {
@@ -20,46 +21,79 @@ async addNewInvoiceRecord(req, res) {
     if (!Array.isArray(invoiceData) || invoiceData.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Missing or invalid 'invoiceData' array.",
+        message: "Missing or invalid 'invoiceData' array."
       });
     }
     const fieldValues = Object.fromEntries(
       invoiceData.map(({ key, value }) => [key, value])
     );
-    const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}${String(today.getMonth() + 1).padStart(2, '0')}${today.getFullYear()}`;
-    const projId = fieldValues.proj_id ?? "NA";
-    const weekNo = fieldValues.wk_no ?? "NA";
-    fieldValues.inv_info = `STD_INV_${formattedDate}_${projId}_${weekNo}`;
-    if (!fieldValues.inv_status) {
-      fieldValues.inv_status = 1;
+    const proj_id = fieldValues.proj_id;
+    const wk_no = fieldValues.week_no || fieldValues.wk_no;
+    if (!proj_id || !wk_no) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: proj_id and week_no (or wk_no)."
+      });
     }
-    const curd = new CurdController.UniversalProcedure();
     connection = await TransactionController.getConnection();
-    curd.dbService.connection = connection;
     await TransactionController.beginTransaction(connection);
+    const [subtasks] = await connection.query(
+      "SELECT s.id, s.sub_task_name, s.percent_complete, s.approval_status " +
+      "FROM studio_sub_tasks s " +
+      "JOIN studio_main_tasks m ON s.main_task = m.id " +
+      "WHERE m.project_id = ? AND s.week_no = ?",
+      [proj_id, wk_no]
+    );
+    if (!subtasks.length) {
+      await TransactionController.rollbackTransaction(connection, "No subtasks found for this week.");
+      return res.status(404).json({
+        success: false,
+        message: "No subtasks found for the given project/week."
+      });
+    }
+    const incompleteSubtasks = subtasks.filter(st => st.percent_complete < 100);
+    if (incompleteSubtasks.length > 0) {
+      await TransactionController.rollbackTransaction(connection, "Incomplete subtasks found.");
+      return res.status(200).json({
+        success: false,
+        message: "Invoice cannot be created. Pending subtasks exist.",
+        incomplete_subtasks: incompleteSubtasks
+      });
+    }
+    const today = new Date();
+    const formattedDate =
+      String(today.getMonth() + 1).padStart(2, "0") +
+      String(today.getDate()).padStart(2, "0") +
+      today.getFullYear();
+    const [lastInvoice] = await connection.query(
+      "SELECT inv_info FROM studio_invoices WHERE inv_info LIKE ? ORDER BY inv_info DESC LIMIT 1",
+      [formattedDate + "%"]
+    );
+    let sequence = 1;
+    if (lastInvoice.length > 0) {
+      const lastInv = lastInvoice[0].inv_info;
+      const lastSeq = parseInt(lastInv.slice(-2), 10);
+      sequence = lastSeq + 1;
+    }
+    fieldValues.inv_info = formattedDate + String(sequence).padStart(2, "0");
+    if (!fieldValues.inv_status) fieldValues.inv_status = 1;
+    const curd = new CurdController.UniversalProcedure();
+    curd.dbService.connection = connection;
     req.body = generateRequestBody("invoices", {
       operationType: "insert",
-      fieldValues,
+      fieldValues
     });
-    const { redisKey } = req.body;
     const dbResponse = await curd.executeProcedure(req);
-    const insertId =
-      dbResponse?.result?.insertId ??
-      dbResponse?.insertId ??
-      (Array.isArray(dbResponse?.result) ? dbResponse.result[0]?.insertId : null);
-    if (!insertId) {
-      console.error("Insert failed. DB Response:", JSON.stringify(dbResponse));
-      throw new Error("Invoice insert failed — insertId not found.");
-    }
+    const insertId = dbResponse?.result?.insertId ?? dbResponse?.insertId;
+    if (!insertId) throw new Error("Invoice insert failed — insertId not found.");
     await TransactionController.commitTransaction(connection);
-    console.log("Transaction committed successfully.");
+    const redisKey = req.body.redisKey;
     if (redis && redis.del && redisKey) {
       try {
         await redis.del(redisKey);
-      } catch (redisErr) {
+      } catch (err) {
         if (process.env.NODE_ENV !== "production") {
-          console.warn("Redis delete failed (read-only replica):", redisErr.message);
+          console.warn("Redis delete failed (read-only replica):", err.message);
         }
       }
     }
@@ -67,40 +101,47 @@ async addNewInvoiceRecord(req, res) {
       success: true,
       message: "Invoice added successfully.",
       invoiceId: insertId,
+      inv_info: fieldValues.inv_info
     });
   } catch (error) {
     console.error("Error adding invoice:", error.message);
-    if (connection) {
-      await TransactionController.rollbackTransaction(connection, error.message);
-    }
+    if (connection) await TransactionController.rollbackTransaction(connection, error.message);
     if (!res.headersSent) {
       return res.status(500).json({
         success: false,
         message: "Failed to add invoice.",
-        error: error.message,
+        error: error.message
       });
     }
   } finally {
-    if (connection) {
-      await TransactionController.releaseConnection(connection);
-      console.log("Connection released.");
-    }
+    if (connection) await TransactionController.releaseConnection(connection);
   }
 }
 async getAllInvoiceRecords(req, res) {
-  const { id, status } = req.query;
+  const { id, status, proj_id } = req.query;   // ⬅ include proj_id
   const curd = new CurdController.UniversalProcedure();
+
   try {
-    const isSimpleQuery = !id && !status;
+    // check if this is a “simple” query (no filters)
+    const isSimpleQuery = !id && !status && !proj_id;
+
+    // build WHERE clause
     const whereClauses = [];
     if (id) whereClauses.push(`si.id = ${Number(id)}`);
     if (status) whereClauses.push(`si.inv_status = ${Number(status)}`);
+    if (proj_id) whereClauses.push(`si.proj_id = ${Number(proj_id)}`); // ⬅ new filter
+
     const whereClause = whereClauses.join(" AND ");
+
+    // build request for UniversalProcedure
     req.body = generateRequestBody("invoices", {
       operationType: "select",
-      whereclause: whereClause || undefined
+      whereclause: whereClause || undefined,
     });
+
     const { redisKey } = req.body;
+
+    // try cache only if no filters
     if (isSimpleQuery) {
       const cached = await redis.get(redisKey);
       if (cached) {
@@ -111,11 +152,16 @@ async getAllInvoiceRecords(req, res) {
         });
       }
     }
+
+    // query database
     const dbResponse = await curd.executeProcedure(req);
     const result = dbResponse?.result || [];
+
+    // cache only if simple query
     if (isSimpleQuery && result.length > 0) {
       await redis.set(redisKey, JSON.stringify(result));
     }
+
     return res.status(200).json({
       success: true,
       source: isSimpleQuery ? "db + cache" : "db",
@@ -130,6 +176,8 @@ async getAllInvoiceRecords(req, res) {
     });
   }
 }
+
+
 async updateInvoiceRecord(req, res) {
   let connection;
   try {

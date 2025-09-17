@@ -1,4 +1,5 @@
 
+// export default ProtectedRoute;
 
 import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
@@ -34,6 +35,8 @@ const ProtectedRoute = ({ roles, setIntendedPath, setIsModalOpen }) => {
       ? "FM"
       : normalizedRole === "admin"
       ? "Admin"
+      : normalizedRole === "vendor"
+      ? "Vendor"
       : null;
 
   console.log("ProtectedRoute - userRole:", userRole, "allowed roles:", roles);
@@ -47,4 +50,3 @@ const ProtectedRoute = ({ roles, setIntendedPath, setIsModalOpen }) => {
 };
 
 export default ProtectedRoute;
-

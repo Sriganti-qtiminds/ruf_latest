@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import '../glassmorphic.css';
-
+import useAppStore from '../../../store/appstore';
 const Vendors = () => {
+  const users = useAppStore((state) => state.users);
+const fetchUsersAndSiteManagers = useAppStore((state) => state.fetchUsersAndSiteManagers);
+  
+useEffect(() => {
+  fetchUsersAndSiteManagers();
+}, []);
+
   const [vendors, setVendors] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('add');
@@ -19,10 +26,12 @@ const Vendors = () => {
     ven_registration_no: '',
     ven_mobile: '',
     ven_approved_date: '',
-    ven_approver_id: '',
     ven_approval_status: 0,
     ven_validity_months: '',
-    ven_wht_rate: ''
+    ven_wht_rate: '',
+    sgst_pct: '',
+    cgst_pct: '',
+    sign_pct: ''
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -99,8 +108,8 @@ const Vendors = () => {
     setFormData({
       ven_cat_id: '', ven_user_id: '', ven_address: '', ven_firm_name: '', ven_poc: '',
       ven_pan_no: '', ven_aadhaar_no: '', ven_tin_no: '', ven_registration_no: '',
-      ven_mobile: '', ven_approved_date: '', ven_approver_id: '', ven_approval_status: 0,
-      ven_validity_months: '', ven_wht_rate: ''
+      ven_mobile: '', ven_approved_date: '',  ven_approval_status: 0,
+      ven_validity_months: '', ven_wht_rate: '', sgst_pct: '', cgst_pct: '', sign_pct: ''
     });
     setError('');
     setSuccess('');
@@ -111,21 +120,26 @@ const Vendors = () => {
     setModalType('edit');
     setSelectedVendor(vendor);
     setFormData({
-      ven_cat_id: vendor.ven_cat_id?.toString() || '',
-      ven_user_id: vendor.ven_user_id || '',
-      ven_address: vendor.ven_address || '',
-      ven_firm_name: vendor.ven_firm_name || '',
-      ven_poc: vendor.ven_poc || '',
-      ven_pan_no: vendor.ven_pan_no || '',
-      ven_aadhaar_no: vendor.ven_aadhaar_no || '',
-      ven_tin_no: vendor.ven_tin_no || '',
-      ven_registration_no: vendor.ven_registration_no || '',
-      ven_mobile: vendor.ven_mobile || '',
-      ven_approved_date: vendor.ven_approved_date ? vendor.ven_approved_date.split('T')[0] : '',
-      ven_approver_id: vendor.ven_approver_id || '',
-      ven_approval_status: vendor.ven_approval_status || 0,
-      ven_validity_months: vendor.ven_validity_months?.toString() || '',
-      ven_wht_rate: vendor.ven_wht_rate?.toString() || ''
+    ...vendor,
+    ven_cat_id: vendor.ven_cat_id?.toString() || '',
+    ven_user_id: vendor.ven_user_id || '',
+    ven_address: vendor.ven_address || '',
+    ven_firm_name: vendor.ven_firm_name || '',
+    ven_poc: vendor.ven_poc || '',
+    ven_pan_no: vendor.ven_pan_no || '',
+    ven_aadhaar_no: vendor.ven_aadhaar_no || '',
+    ven_tin_no: vendor.ven_tin_no || '',
+    ven_registration_no: vendor.ven_registration_no || '',
+    ven_mobile: vendor.ven_mobile || '',
+    ven_approved_date: vendor.ven_approved_date
+      ? vendor.ven_approved_date.split('T')[0] // keep only YYYY-MM-DD
+      : '',
+    ven_approval_status: vendor.ven_approval_status ?? 0,
+    ven_validity_months: vendor.ven_validity_months?.toString() || '',
+    ven_wht_rate: vendor.ven_wht_rate?.toString() || '',
+    sgst_pct: vendor.sgst_pct?.toString() || '9',
+    cgst_pct: vendor.cgst_pct?.toString() || '9',
+    sign_pct: vendor.sign_pct?.toString() || '20'
     });
     setError('');
     setSuccess('');
@@ -151,6 +165,8 @@ const Vendors = () => {
       }
     }
   };
+  const [searchTerm, setSearchTerm] = useState("");
+
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -165,7 +181,7 @@ const Vendors = () => {
     }
 
     try {
-      const vendorData = [
+      let vendorData = [
         { key: "ven_cat_id", value: parseInt(formData.ven_cat_id) || 1 },
         { key: "ven_user_id", value: formData.ven_user_id || "" },
         { key: "ven_address", value: formData.ven_address || "" },
@@ -176,26 +192,38 @@ const Vendors = () => {
         { key: "ven_tin_no", value: formData.ven_tin_no || "" },
         { key: "ven_registration_no", value: formData.ven_registration_no || "" },
         { key: "ven_mobile", value: formData.ven_mobile },
-        { key: "ven_approved_date", value: formData.ven_approved_date ? `${formData.ven_approved_date} 00:00:00` : "" },
-        { key: "ven_approver_id", value: formData.ven_approver_id || "" },
+        {
+          key: "ven_approved_date",
+          value: formData.ven_approved_date
+            ? `${formData.ven_approved_date} 00:00:00`
+            : null
+        },
         { key: "ven_approval_status", value: parseInt(formData.ven_approval_status) || 0 },
         { key: "ven_validity_months", value: parseInt(formData.ven_validity_months) || 12 },
-        { key: "ven_wht_rate", value: parseFloat(formData.ven_wht_rate) || 0 }
+        { key: "ven_wht_rate", value: parseFloat(formData.ven_wht_rate) || 0 },
+        { key: "sgst_pct", value: parseFloat(formData.sgst_pct) || 0 },
+        { key: "cgst_pct", value: parseFloat(formData.cgst_pct) || 0 },
+        { key: "sign_pct", value: parseFloat(formData.sign_pct) || 0 }
       ];
 
-      const url = modalType === 'add' 
-        ? 'http://localhost:5000/api/vendor/addvendorInfo'
-        : 'http://localhost:5000/api/vendor/updatevendorInfo';
+      // For edit mode, add the ID to the vendorData array
+      if (modalType === 'edit') {
+        vendorData.unshift({ key: "id", value: selectedVendor.id });
+      }
 
+      const url = `${import.meta.env.VITE_API_URL}/vendor/${modalType === 'add' ? 'addvendorInfo' : 'updatevendorInfo'}`;
       const method = modalType === 'add' ? 'POST' : 'PUT';
+
+      const requestBody = { vendorData };
 
       const response = await fetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ vendorData })
+        body: JSON.stringify(requestBody)
       });
+      console.log(requestBody);
 
       if (!response.ok) {
         throw new Error(`Failed to ${modalType} vendor`);
@@ -203,7 +231,7 @@ const Vendors = () => {
 
       setSuccess(`Vendor ${modalType === 'add' ? 'added' : 'updated'} successfully!`);
       setShowModal(false);
-      fetchVendors(); // Refresh the list
+      fetchVendors();
     } catch (err) {
       console.error(`Error ${modalType}ing vendor:`, err);
       setError(`Failed to ${modalType} vendor. Please try again.`);
@@ -211,7 +239,18 @@ const Vendors = () => {
       setSubmitting(false);
     }
   };
+  const filteredVendors = vendors.filter((vendor) => {
+  const firmName = vendor.ven_firm_name?.toLowerCase() || "";
+  const userName = vendor.vendor_user_name?.toLowerCase() || "";
+  const status = getApprovalStatusName(vendor.ven_approval_status).toLowerCase();
+  const query = searchTerm.toLowerCase();
 
+  return (
+    firmName.includes(query) ||
+    userName.includes(query) ||
+    status.includes(query)
+  );
+});
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -232,7 +271,7 @@ const Vendors = () => {
         </div>
       )}
 
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <button
           onClick={handleAdd}
           className="bg-[#E07A5F] text-white px-6 py-2 rounded-lg hover:bg-[#d0694a] transition-colors flex items-center gap-2"
@@ -240,6 +279,16 @@ const Vendors = () => {
           <i className="ri-add-line"></i>
           Add Vendor
         </button>
+
+        <div className="w-full md:w-1/3">
+          <input
+            type="text"
+            placeholder="Search by firm, user, or status..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E07A5F] focus:border-transparent"
+          />
+        </div>
       </div>
 
       {/* Loading State */}
@@ -266,11 +315,14 @@ const Vendors = () => {
                 <th className="p-4 text-left font-semibold text-lg">Approval Status</th>
                 <th className="p-4 text-left font-semibold text-lg">Validity (Months)</th>
                 <th className="p-4 text-left font-semibold text-lg">WHT Rate (%)</th>
+                <th className="p-4 text-left font-semibold text-lg">SGST Rate (%)</th>
+                <th className="p-4 text-left font-semibold text-lg">CGST Rate (%)</th>
+                <th className="p-4 text-left font-semibold text-lg">Signup Percentage (%)</th>
                 <th className="p-4 text-left font-semibold rounded-tr-xl text-lg">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {vendors.map((vendor, idx) => (
+              {filteredVendors.map((vendor, idx) => (
                 <tr
                   key={vendor.id}
                   className={
@@ -291,7 +343,10 @@ const Vendors = () => {
                     </span>
                   </td>
                   <td className="p-4 text-base">{vendor.ven_validity_months || '-'}</td>
-                  <td className="p-4 text-base">{vendor.ven_wht_rate || '-'}%</td>
+                  <td className="p-4 text-base">{vendor.ven_wht_rate || '-'}</td>
+                  <td className="p-4 text-base">{vendor.sgst_pct || '-'}</td>
+                  <td className="p-4 text-base">{vendor.cgst_pct || '-'}</td>
+                  <td className="p-4 text-base">{vendor.sign_pct || '-'}</td>
                   <td className="p-4">
                     <div className="flex gap-2">
                       <button
@@ -427,7 +482,29 @@ const Vendors = () => {
                     maxLength="12"
                   />
                 </div>
-
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Vendor User *</label>
+                    <select
+                      name="ven_user_id"
+                      value={formData.ven_user_id}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          ven_user_id: e.target.value,
+                        }))
+                      }
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E07A5F] focus:border-transparent"
+                    >
+                      <option value="">Select a user</option>
+                      {users.map((user) => (
+                        <option key={user.user_id} value={user.user_id}>
+                          {user.user_name}
+                        </option>
+                      ))}
+                    </select>
+                </div>
+   
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Approval Status</label>
                   <select
@@ -469,8 +546,48 @@ const Vendors = () => {
                     max="100"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SGST Rate (%)</label>
+                  <input type="integer"
+                    name="sgst_pct"
+                    value={formData.sgst_pct}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E07A5F] focus:border-transparent"
+                    placeholder="Enter SGST rate"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">CGST Rate (%)</label>
+                  <input type="integer"
+                    name="cgst_pct"
+                    value={formData.cgst_pct}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E07A5F] focus:border-transparent"
+                    placeholder="Enter CGST rate"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SIGNUP Rate (%)</label>
+                  <input type="integer"
+                    name="sign_pct"
+                    value={formData.sign_pct}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E07A5F] focus:border-transparent"
+                    placeholder="Enter SGST rate"
+                  />
+                </div>
               </div>
-
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Approved Date</label>
+                  <input
+                    type="date"
+                    name="ven_approved_date"
+                    value={formData.ven_approved_date}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E07A5F] focus:border-transparent"
+                    placeholder={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                 <textarea
@@ -514,3 +631,4 @@ const Vendors = () => {
 };
 
 export default Vendors; 
+

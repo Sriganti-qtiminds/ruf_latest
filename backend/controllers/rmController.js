@@ -71,6 +71,7 @@ class addRmTask extends BaseController {
 }
 
 class TaskController extends BaseController {
+
 async getTasks(req, res) {
   try {
     const { rm_id, fm_id, community_id } = req.query;
@@ -197,6 +198,13 @@ async getTasks(req, res) {
     });
   }
 }
+
+
+
+
+
+
+
 
   }
 

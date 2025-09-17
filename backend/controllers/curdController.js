@@ -4,11 +4,12 @@ const BaseController = require("../utils/baseClass");
 const TransactionController = require("../utils/transaction");
 
 class UniversalProcedure extends BaseController {
+
   async executeProcedure(req, res = null) {
     let {
-      jsonfilename,
-      configKey,
-      operationType,
+      jsonfilename = null,
+      configKey = null,
+      operationType = null,
       fieldValues = {},
       updatekeyvaluepairs = {},
       whereclause = "",
@@ -39,15 +40,13 @@ class UniversalProcedure extends BaseController {
       }
 
       await tblInfo.setValues();
-      let tableName;
+
       const isWriteOp = ["insert", "update", "delete"].includes(
         operationType.toLowerCase()
       );
-      if (isWriteOp) {
-        tableName = await tblInfo.getRawTableName();
-      } else {
-        tableName = await tblInfo.getTableName();
-      }
+      const tableName = isWriteOp
+        ? await tblInfo.getRawTableName()
+        : await tblInfo.getTableName();
 
       const tableFields = await tblInfo.getTableFields();
       const joinClause = await tblInfo.getTableJoinClause();
@@ -60,6 +59,7 @@ class UniversalProcedure extends BaseController {
         return res ? res.status(400).json(err) : err;
       }
 
+      // always returns a flat array or metadata object
       const rawResult = await this.dbServicestudio.callUniversalProcedure(
         operationType,
         tableName,
@@ -74,14 +74,18 @@ class UniversalProcedure extends BaseController {
         sortorder
       );
 
-      let affectedRows =
-        rawResult?.affectedRows ??
-        rawResult?.result?.affectedRows ??
-        (Array.isArray(rawResult?.result)
-          ? rawResult.result[0]?.affectedRows
-          : 0);
+      // Detect affected rows for write operations
+      
+      console.log("Type of RawResult : ", typeof rawResult);
 
-      if (isWriteOp && affectedRows === 0) {
+      if (Array.isArray(rawResult)) {
+        console.log("It is an Array from CurdController");
+      } else {
+        console.log("It is an object from CurdController");
+      }
+      //console.log("Result :", rawResult);
+
+      if (!isWriteOp) {        
         const err = {
           success: false,
           error: `No records affected by ${operationType} operation.`,
@@ -90,9 +94,14 @@ class UniversalProcedure extends BaseController {
         return res ? res.status(404).json(err) : err;
       }
 
+      // For select operations, always return an array
+      const result = Array.isArray(rawResult)
+        ? rawResult
+        : rawResult?.result ?? [];
+
       const success = {
         success: true,
-        result: rawResult.result ?? rawResult,
+        result,
       };
 
       return res ? res.status(200).json(success) : success;

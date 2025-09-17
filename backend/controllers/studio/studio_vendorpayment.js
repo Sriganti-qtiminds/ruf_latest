@@ -9,7 +9,7 @@ const redis = require("../../config/redis");
 const { v4: uuidv4 } = require("uuid");
 const paginate = require("../../utils/pagination");
 const TransactionController = require("../../utils/transaction");
-const config = require("../../jsonfiles/rooms_info.json");
+const config = require("../../jsonfiles/studio_info.json");
 const { generateRequestBody } = require("../../utils/requestFactory");
 const CurdController = require("../curdController");
 class StudiovendorPaymentController extends BaseController {
@@ -208,7 +208,6 @@ async updateVendorPayment(req, res) {
     }
   }
 }
-
 async deleteVendorPayment(req, res) {
   const { id } = req.query;
   if (!id || isNaN(Number(id))) {
@@ -260,6 +259,170 @@ async deleteVendorPayment(req, res) {
     }
   }
 }
+async addNewStudioProject(req, res) {
+  let connection;
 
+  try {
+    // === Parse project data ===
+    const projectData = JSON.parse(req.body.projectData);
+
+    if (!Array.isArray(projectData) || projectData.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing or invalid 'projectData' array.",
+      });
+    }
+
+    const fieldValues = Object.fromEntries(
+      projectData.map(({ key, value }) => [key, value])
+    );
+    delete fieldValues["weeks_planned"];
+    fieldValues.project_name = "placeholder";
+
+    // === Begin transaction ===
+    connection = await TransactionController.getConnection();
+    await TransactionController.beginTransaction(connection);
+
+    const curd = new CurdController.UniversalProcedure();
+    curd.dbService.connection = connection;
+
+    // === Insert project ===
+    req.body = generateRequestBody("studio_projects_info", {
+      operationType: "insert",
+      fieldValues,
+    });
+
+    const { redisKey } = req.body;
+    const dbResponse = await curd.executeProcedure(req);
+
+    const insertId = dbResponse?.result?.insertId ?? dbResponse?.insertId;
+    if (!insertId) throw new Error("Project insert failed — insertId not found.");
+
+    // === Generate project name ===
+    const formatDateForName = () => {
+      const now = new Date();
+      return `${String(now.getDate()).padStart(2, "0")}_${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}_${now.getFullYear()}`;
+    };
+
+    const generatedProjectName = `P${String(insertId).padStart(
+      3,
+      "0"
+    )}_${formatDateForName()}`;
+
+    req.body = generateRequestBody("studio_projects_info", {
+      operationType: "update",
+      updatekeyvaluepairs: { project_name: generatedProjectName },
+      whereclause: `id = ${insertId}`,
+    });
+
+    await curd.executeProcedure(req);
+
+    // === Define S3 paths with projXX ===
+    const projectIdSegment = `proj${String(insertId).padStart(2, "0")}`;
+
+    const pdfBasePath = `studio/docs/${projectIdSegment}`;
+    const imageBasePath = `studio/media/${projectIdSegment}/images`;
+    const videoBasePath = `studio/media/${projectIdSegment}/videos`;
+
+    // === Uploaded files from request ===
+ const Images = req.files["Images"] || [];  // must match "Images"
+const Videos = req.files["Videos"] || [];  // must match "Videos"
+const pdfFiles = req.files["pdfs"] || [];  // must match "pdfs"
+
+
+    const uploadedFiles = {
+      images: [],
+      videos: [],
+      pdfs: [],
+    };
+
+    // === Upload files ===
+    try {
+      if (Images.length) {
+        uploadedFiles.images = await S3Service.uploadImagess(
+          Images,
+          `${imageBasePath}/`
+        );
+      }
+
+      if (Videos.length) {
+        uploadedFiles.videos = await S3Service.uploadVideos(
+          Videos,
+          `${videoBasePath}/`
+        );
+      }
+
+      if (pdfFiles.length) {
+        uploadedFiles.pdfs = await S3Service.uploadToS3(pdfFiles, pdfBasePath);
+      }
+    } catch (error) {
+      throw new Error(`File upload failed: ${error.message}`);
+    }
+
+    // === Paths to save in DB ===
+    const imageFolderPath = `${imageBasePath}/`;
+    const videoFolderPath = `${videoBasePath}/`;
+    const pdfFolderPath = `${pdfBasePath}/`;
+
+    // === Update documents_path in DB ===
+    req.body = generateRequestBody("studio_projects_info", {
+      operationType: "update",
+      updatekeyvaluepairs: {
+        documents_path: JSON.stringify({
+          images: imageFolderPath,
+          videos: videoFolderPath,
+          pdfs: pdfFolderPath,
+          files: uploadedFiles,
+        }),
+      },
+      whereclause: `id = ${insertId}`,
+    });
+
+    await curd.executeProcedure(req);
+
+    // === Commit transaction ===
+    await TransactionController.commitTransaction(connection);
+
+    // === Clear Redis cache ===
+    if (redis && redis.del && redisKey) {
+      try {
+        await redis.del(redisKey);
+      } catch (err) {
+        console.warn("⚠️ Redis delete failed:", err.message);
+      }
+    }
+
+    // === Response ===
+    return res.status(201).json({
+      success: true,
+      message: "Studio project added successfully.",
+      projectId: insertId,
+      projectName: generatedProjectName,
+      mediaPath: {
+        images: imageFolderPath,
+        videos: videoFolderPath,
+        documents: pdfFolderPath,
+        files: uploadedFiles,
+      },
+    });
+  } catch (error) {
+    if (connection)
+      await TransactionController.rollbackTransaction(connection, error.message);
+
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to add studio project.",
+        error: error.message,
+      });
+    }
+  } finally {
+    if (connection) {
+      await TransactionController.releaseConnection(connection);
+    }
+  }
+}
 }
 module.exports = StudiovendorPaymentController;
